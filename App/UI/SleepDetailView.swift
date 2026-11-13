@@ -69,7 +69,7 @@ struct SleepDetailView: View {
                     if sleep.napMinutes > 1 {
                         Label(model.loc("\(Int(sleep.napMinutes.rounded())) min Nickerchen", "\(Int(sleep.napMinutes.rounded())) min nap"), systemImage: "powersleep")
                             .font(.caption)
-                            .foregroundStyle(Theme.teal)
+                            .foregroundStyle(Theme.accent)
                     }
                 }
             }
@@ -121,7 +121,7 @@ struct SleepDetailView: View {
                     ForEach(record.naps, id: \.id) { nap in
                         HStack {
                             Image(systemName: "powersleep")
-                                .foregroundStyle(Theme.teal)
+                                .foregroundStyle(Theme.accent)
                             Text("\(Fmt.clock(nap.start)) – \(Fmt.clock(nap.end))\(model.loc(" Uhr", ""))")
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.textPrimary)

@@ -13,7 +13,7 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .tint(Theme.teal)
+        .tint(Theme.accent)
         .sheet(isPresented: Binding(
             get: { model.journalPromptDay != nil },
             set: { if !$0 { model.journalPromptDay = nil } }

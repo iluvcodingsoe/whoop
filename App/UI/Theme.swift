@@ -14,6 +14,8 @@ enum Theme {
     static let strainBlue = Color(hex: 0x4A9DFF)
     static let sleepPurple = Color(hex: 0x9B8CFF)
     static let teal = Color(hex: 0x35D0BA)
+    /// Main app accent: buttons, tabs, toggles, highlights.
+    static let accent = Color(hex: 0x3D8BFF)
     static let orange = Color(hex: 0xFF9F4A)
 
     static func recoveryColor(zone: RecoveryZone) -> Color {

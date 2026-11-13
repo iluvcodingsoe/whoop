@@ -95,7 +95,7 @@ struct TrendsView: View {
                 value: Double(min(model.recoveryDayCount, JournalEngine.assessmentMinRecoveryDays)),
                 total: Double(JournalEngine.assessmentMinRecoveryDays)
             )
-            .tint(Theme.teal)
+            .tint(Theme.accent)
         }
     }
 
@@ -181,7 +181,7 @@ struct TrendsView: View {
                 StatCell(
                     label: "HRV",
                     value: average(rawHrv).map { "\(Int($0.rounded())) ms" } ?? "–",
-                    color: Theme.teal
+                    color: Theme.accent
                 )
             }
         }
@@ -247,7 +247,7 @@ struct TrendsView: View {
                 BaselineLineChart(
                     points: hrvPoints,
                     baseline: model.recovery(for: latestRecoveryKey)?.hrvBaseline,
-                    color: Theme.teal,
+                    color: Theme.accent,
                     isLogBaseline: true
                 )
                 weeklyNote

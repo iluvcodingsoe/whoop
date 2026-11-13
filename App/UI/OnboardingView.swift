@@ -31,7 +31,7 @@ struct OnboardingView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Theme.teal.opacity(0.25), Theme.sleepPurple.opacity(0.2)],
+                            colors: [Theme.accent.opacity(0.25), Theme.sleepPurple.opacity(0.2)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -39,7 +39,7 @@ struct OnboardingView: View {
                     .frame(width: 130, height: 130)
                 Image(systemName: "waveform.path.ecg")
                     .font(.system(size: 54, weight: .semibold))
-                    .foregroundStyle(Theme.teal)
+                    .foregroundStyle(Theme.accent)
             }
             .padding(.bottom, 24)
 
@@ -87,7 +87,7 @@ struct OnboardingView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 15)
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.teal))
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.accent))
                     .foregroundStyle(Color.black)
             }
             .padding(.horizontal, 24)
@@ -157,7 +157,7 @@ struct ProfileSetupView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.teal))
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.accent))
                         .foregroundStyle(Color.black)
                 }
                 Button {

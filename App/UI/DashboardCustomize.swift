@@ -67,7 +67,7 @@ struct DashboardCustomizeSheet: View {
                     ForEach(model.moduleOrder) { module in
                         HStack(spacing: 12) {
                             Image(systemName: module.symbol)
-                                .foregroundStyle(Theme.teal)
+                                .foregroundStyle(Theme.accent)
                                 .frame(width: 26)
                             Text(module.title(model.language))
                                 .foregroundStyle(Theme.textPrimary)
@@ -77,7 +77,7 @@ struct DashboardCustomizeSheet: View {
                                 set: { model.setModule(module, visible: $0) }
                             ))
                             .labelsHidden()
-                            .tint(Theme.teal)
+                            .tint(Theme.accent)
                         }
                     }
                     .onMove { from, to in
@@ -180,7 +180,7 @@ struct StepsCard: View {
                         ZStack(alignment: .leading) {
                             Capsule().fill(Theme.cardElevated)
                             Capsule()
-                                .fill(Double(steps) >= Self.goal ? Theme.green : Theme.teal)
+                                .fill(Double(steps) >= Self.goal ? Theme.green : Theme.accent)
                                 .frame(width: max(4, geo.size.width * CGFloat(min(1, Double(steps) / Self.goal))))
                         }
                     }

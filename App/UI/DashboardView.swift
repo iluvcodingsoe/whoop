@@ -111,7 +111,7 @@ struct DashboardView: View {
                         .foregroundStyle(Theme.textSecondary)
                 }
                 ProgressView(value: model.syncFraction)
-                    .tint(Theme.teal)
+                    .tint(Theme.accent)
             }
         }
     }
@@ -254,7 +254,7 @@ struct DashboardView: View {
                                 .font(.caption)
                                 .foregroundStyle(Theme.textSecondary)
                             ProgressView(value: Double(result.calibrationHave), total: Double(result.calibrationNeed))
-                                .tint(Theme.teal)
+                                .tint(Theme.accent)
                         }
                     }
                 } else {
@@ -330,7 +330,7 @@ struct DashboardView: View {
                                let bed = model.bedtimeTonight?.recommendedBedtimeMinutes {
                                 Label(model.loc("Ziel heute: bis \(Fmt.clockFromMinutes(bed)) ins Bett", "Tonight: in bed by \(Fmt.clockFromMinutes(bed))"), systemImage: "bed.double")
                                     .font(.caption)
-                                    .foregroundStyle(Theme.teal)
+                                    .foregroundStyle(Theme.accent)
                             }
                         }
                     }
@@ -515,7 +515,7 @@ struct DayChips: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? Theme.teal : .clear, lineWidth: 1.5)
+                    .stroke(isSelected ? Theme.accent : .clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)
