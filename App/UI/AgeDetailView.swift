@@ -52,7 +52,7 @@ struct AgeDetailView: View {
                 VStack(spacing: 10) {
                     Image(systemName: "hourglass")
                         .font(.largeTitle)
-                        .foregroundStyle(Theme.teal)
+                        .foregroundStyle(Theme.accent)
                     Text(model.loc("Wird kalibriert", "Calibrating"))
                         .font(.system(.title2, design: .rounded).weight(.bold))
                         .foregroundStyle(Theme.textPrimary)
@@ -61,7 +61,7 @@ struct AgeDetailView: View {
                         .foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
                     ProgressView(value: Double(result.calibrationHave), total: Double(result.calibrationNeed))
-                        .tint(Theme.teal)
+                        .tint(Theme.accent)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -117,7 +117,7 @@ struct AgeDetailView: View {
                         label: "VO₂max",
                         value: String(format: "%.0f", vo2),
                         sub: "ml/kg/min",
-                        color: Theme.teal
+                        color: Theme.accent
                     )
                     if let fitnessAge = result.fitnessAge {
                         StatCell(
@@ -168,7 +168,7 @@ struct AgeDetailView: View {
         HStack(alignment: .top, spacing: 10) {
             Text(number)
                 .font(.subheadline.weight(.bold).monospacedDigit())
-                .foregroundStyle(Theme.teal)
+                .foregroundStyle(Theme.accent)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))

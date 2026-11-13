@@ -304,13 +304,13 @@ struct JournalFactorGrid: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(active ? Theme.teal.opacity(0.20) : Theme.cardElevated)
+                            .fill(active ? Theme.accent.opacity(0.20) : Theme.cardElevated)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(active ? Theme.teal : .clear, lineWidth: 1)
+                            .stroke(active ? Theme.accent : .clear, lineWidth: 1)
                     )
-                    .foregroundStyle(active ? Theme.teal : Theme.textSecondary)
+                    .foregroundStyle(active ? Theme.accent : Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -357,7 +357,7 @@ struct JournalPromptSheet: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.teal))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.accent))
                             .foregroundStyle(Color.black)
                     }
                     .padding(.top, 6)

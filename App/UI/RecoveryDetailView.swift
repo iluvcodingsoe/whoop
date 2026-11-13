@@ -117,7 +117,7 @@ struct RecoveryDetailView: View {
                 BaselineLineChart(
                     points: points,
                     baseline: recovery.hrvBaseline,
-                    color: Theme.teal,
+                    color: Theme.accent,
                     isLogBaseline: true
                 )
                 Text(model.loc("Band = persönliche Baseline ± 1 SD. Höher als das Band ist gut, darunter deutet auf Belastung hin.", "Band = personal baseline ± 1 SD. Above the band is good, below suggests strain."))
