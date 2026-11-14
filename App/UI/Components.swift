@@ -186,68 +186,106 @@ struct TodayOverviewCard: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        NavigationLink {
-            OverviewDetailView()
-        } label: {
-            cardContent
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private var cardContent: some View {
         let key = model.selectedDayKey
         let recovery = model.recovery(for: key)
         let sleep = model.sleep(for: key)
         let strain = model.strain(for: key)
         let target = recovery.map { StrainEngine.targetStrain(forRecovery: $0.score) }
+        let sleepPerf: Double? = (sleep?.hasData == true) ? sleep?.performance : nil
 
-        SectionCard {
-            HStack(spacing: 18) {
-                TripleRingView(
-                    recovery: recovery.map { Double($0.score) / 100 },
-                    sleep: (sleep?.hasData == true) ? (sleep.map { $0.performance / 100 }) : nil,
-                    strainOfTarget: zip2(strain, target).map { min(1, $0.strain / max($1, 0.1)) },
-                    recoveryColor: recovery.map { Theme.recoveryColor(zone: $0.zone) } ?? Theme.textSecondary
+        HStack(spacing: 10) {
+            NavigationLink {
+                SleepDetailView()
+            } label: {
+                HeroTile(
+                    label: model.loc("Schlaf", "Sleep"),
+                    value: sleepPerf.map { "\(Int($0.rounded()))" } ?? "–",
+                    unit: sleepPerf == nil ? "" : "%",
+                    fraction: (sleepPerf ?? 0) / 100,
+                    color: Theme.sleepPurple
                 )
-                .frame(width: 116, height: 116)
-
-                VStack(alignment: .leading, spacing: 9) {
-                    overviewRow(
-                        color: recovery.map { Theme.recoveryColor(zone: $0.zone) } ?? Theme.textSecondary,
-                        label: "Recovery",
-                        value: recovery.map { "\($0.score) %" } ?? "–"
-                    )
-                    overviewRow(
-                        color: Theme.sleepPurple,
-                        label: model.loc("Schlaf", "Sleep"),
-                        value: (sleep?.hasData == true) ? "\(Int(sleep!.performance.rounded())) %" : "–"
-                    )
-                    overviewRow(
-                        color: Theme.strainBlue,
-                        label: "Strain",
-                        value: strain.map { s in
-                            target.map { String(format: model.loc("%.1f / Ziel %.1f", "%.1f / target %.1f"), s.strain, $0) }
-                                ?? String(format: "%.1f", s.strain)
-                        } ?? "–"
-                    )
-                }
-                Spacer(minLength: 0)
             }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                RecoveryDetailView()
+            } label: {
+                HeroTile(
+                    label: "Recovery",
+                    value: recovery.map { "\($0.score)" } ?? "–",
+                    unit: recovery == nil ? "" : "%",
+                    fraction: recovery.map { Double($0.score) / 100 } ?? 0,
+                    color: recovery.map { Theme.recoveryColor(zone: $0.zone) } ?? Theme.textSecondary,
+                    emphasized: true
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                StrainDetailView()
+            } label: {
+                HeroTile(
+                    label: "Strain",
+                    value: strain.map { String(format: "%.1f", $0.strain) } ?? "–",
+                    unit: "",
+                    fraction: strain.map { $0.strain / 21 } ?? 0,
+                    color: Theme.accent,
+                    marker: target.map { $0 / 21 }
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
+}
 
-    private func overviewRow(color: Color, label: String, value: String) -> some View {
-        HStack(spacing: 8) {
-            Circle().fill(color).frame(width: 8, height: 8)
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(Theme.textSecondary)
-            Spacer(minLength: 4)
-            Text(value)
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .foregroundStyle(Theme.textPrimary)
+/// One of the three headline tiles at the top of Today.
+struct HeroTile: View {
+    let label: String
+    let value: String
+    let unit: String
+    let fraction: Double
+    let color: Color
+    var marker: Double? = nil
+    var emphasized: Bool = false
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 5) {
+                Circle().fill(color).frame(width: 6, height: 6)
+                Text(label.uppercased())
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .kerning(0.8)
+                    .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            ArcGauge(fraction: fraction, color: color, lineWidth: emphasized ? 9 : 7, marker: marker) {
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text(value)
+                        .font(.system(size: emphasized ? 30 : 24, weight: .heavy, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    if !unit.isEmpty {
+                        Text(unit)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                }
+            }
+            .frame(height: emphasized ? 96 : 84)
         }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(emphasized ? Theme.cardElevated : Theme.card)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(emphasized ? color.opacity(0.35) : Color.clear, lineWidth: 1)
+        )
     }
 }
 
