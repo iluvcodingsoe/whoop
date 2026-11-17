@@ -25,7 +25,7 @@ struct StrainDetailView: View {
                         .padding(.top, 14)
 
                     if let record = model.selectedRecord, !record.hrSamples.isEmpty {
-                        SectionHeading(text: model.loc("Tagesverlauf", "Heart rate today"))
+                        SectionHeading(text: model.loc("Herzfrequenz", "Heart rate"))
                             .padding(.top, 34)
                         Panel {
                             HRDayChart(samples: record.hrSamples)

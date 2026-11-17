@@ -77,7 +77,7 @@ struct SleepDetailView: View {
                     sub: model.loc("Bedarf \(Fmt.hm(sleep.needMinutes)) h", "Need \(Fmt.hm(sleep.needMinutes)) h")
                 )
                 StatTile(
-                    label: model.loc("Im Bett", "In bed"),
+                    label: model.loc("Bettzeit", "Bedtime"),
                     value: sleep.bedTime.map { Fmt.clock($0) } ?? "–",
                     sub: sleep.wakeTime.map { model.loc("Auf \(Fmt.clock($0))", "Woke \(Fmt.clock($0))") }
                 )
