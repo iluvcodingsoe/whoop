@@ -59,8 +59,14 @@ jobs:
           shoot() {
             name=$1; shift
             xcrun simctl launch --terminate-running-process "$UDID" net.dehlwes.pulse -screenshotDemo -screenshotYesterday "$@"
-            sleep 22
-            xcrun simctl io "$UDID" screenshot "shots/$name.png"
+            sleep 15
+            for attempt in 1 2 3 4; do
+              xcrun simctl io "$UDID" screenshot "shots/$name.png"
+              # A black (still loading) screen compresses to a tiny file.
+              size=$(stat -f%z "shots/$name.png")
+              [ "$size" -gt 150000 ] && break
+              sleep 10
+            done
           }
           shoot 1-home -screenshotTab home
           shoot 2-sleep -screenshotPage sleep
