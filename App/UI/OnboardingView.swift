@@ -7,7 +7,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            ScreenBackground()
             if step == 0 {
                 welcomePage
             } else {

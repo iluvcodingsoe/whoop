@@ -164,6 +164,7 @@ final class AppModel {
 
     let store: MetricsStore
     let journal: JournalStore
+    let dailyLogs: DailyLogStore
     let auth = GoogleAuth()
     private(set) var strainResults: [String: StrainResult] = [:]
     private(set) var sleepAnalyses: [String: SleepAnalysis] = [:]
@@ -174,6 +175,10 @@ final class AppModel {
     /// Klasse (nicht @Observable) — ohne diesen Spiegel würden Toggles in der
     /// UI nicht sichtbar, weil SwiftUI keine Änderung mitbekommt.
     private(set) var journalEntries: [String: JournalEntry] = [:]
+    /// Observabler Spiegel der Tages-Logs (Wasser, Essen, Gewicht, Stimmung).
+    private(set) var dayLogs: [String: DailyLog] = [:]
+    /// Aktiver Tab der Hauptnavigation.
+    var selectedTab: MainTab = .home
 
     private let defaults = UserDefaults.standard
 
@@ -183,6 +188,7 @@ final class AppModel {
             .appendingPathComponent("Pulse", isDirectory: true)
         store = MetricsStore(directory: directory)
         journal = JournalStore(directory: directory)
+        dailyLogs = DailyLogStore(directory: directory)
 
         // Lokale Konstante, damit unten nicht self.language (Observable-Getter)
         // gelesen wird, bevor alle Stored Properties initialisiert sind.
@@ -220,6 +226,42 @@ final class AppModel {
         )
 
         recomputeAll()
+        applyScreenshotArguments()
+    }
+
+    /// Nur für automatische Design-Screenshots im Simulator (CI):
+    /// `-screenshotDemo` startet Demo-Daten auf Englisch, `-screenshotTab`
+    /// wählt den Tab. Normale Starts sind davon nicht betroffen.
+    private func applyScreenshotArguments() {
+        let args = ProcessInfo.processInfo.arguments
+        guard args.contains("-screenshotDemo") else { return }
+        language = .en
+        age = 17
+        sex = .male
+        startDemo()
+        if let i = args.firstIndex(of: "-screenshotTab"), i + 1 < args.count,
+           let tab = MainTab(rawValue: args[i + 1]) {
+            selectedTab = tab
+        }
+        // Ein paar Beispiel-Einträge, damit das Journal nicht leer aussieht.
+        let today = DayKey.today()
+        for offset in 1...7 {
+            let key = DayKey.addDays(today, -offset)
+            if journal.entry(for: key).factors.isEmpty {
+                journal.toggle(.exercised, on: key)
+            }
+        }
+        updateDayLog(today) { log in
+            log.waterGlasses = 3
+            log.mood = .good
+        }
+        updateDayLog(DayKey.addDays(today, -2)) { $0.weightKg = 61.8 }
+        updateDayLog(DayKey.addDays(today, -12)) { $0.weightKg = 62.4 }
+        updateDayLog(DayKey.addDays(today, -20)) { $0.weightKg = 62.9 }
+        recomputeJournalInsights()
+        if args.contains("-screenshotYesterday") {
+            selectedDayKey = DayKey.addDays(today, -1)
+        }
     }
 
     // MARK: - Abgeleitete Konfiguration
@@ -286,8 +328,47 @@ final class AppModel {
         recomputeJournalInsights()
     }
 
+    // MARK: - Tages-Log
+
+    func dayLog(for key: String) -> DailyLog {
+        dayLogs[key] ?? DailyLog(date: key)
+    }
+
+    func updateDayLog(_ key: String, _ change: (inout DailyLog) -> Void) {
+        dailyLogs.update(key, change)
+        dailyLogs.save()
+        dayLogs = dailyLogs.logs
+    }
+
+    /// Hat der Nutzer für den Tag eingecheckt (Journal-Faktoren oder Log)?
+    func isCheckedIn(_ key: String) -> Bool {
+        !(journalEntries[key]?.factors.isEmpty ?? true) || !(dayLogs[key]?.isEmpty ?? true)
+    }
+
+    /// Aufeinanderfolgende Tage mit Daten bis heute (Serie oben links).
+    var streakDays: Int {
+        var count = 0
+        var key = DayKey.today()
+        if store.days[key] == nil { key = DayKey.addDays(key, -1) }
+        while let record = store.days[key],
+              record.restingHR != nil || !record.sleepSessions.isEmpty || (record.steps ?? 0) > 0 {
+            count += 1
+            key = DayKey.addDays(key, -1)
+        }
+        return count
+    }
+
+    // MARK: - Stress
+
+    /// Stress-Verlauf (0–3) für einen Tag aus der Intraday-HF.
+    func stress(for key: String) -> StressResult? {
+        guard let record = store.days[key] else { return nil }
+        return StressEngine.compute(record: record, restingHR: record.restingHR, maxHR: strainConfig.maxHR)
+    }
+
     private func recomputeJournalInsights() {
         journalEntries = journal.entries
+        dayLogs = dailyLogs.logs
         let recoveryByDay = recoveryResults.mapValues { $0.score }
         journalInsights = JournalEngine.insights(entries: journal.entries, recoveryByDay: recoveryByDay)
     }
@@ -609,6 +690,7 @@ final class AppModel {
     func resetAll() {
         store.wipe()
         journal.wipe()
+        dailyLogs.wipe()
         syncLog = []
         lastSyncAt = nil
         connectedAt = nil

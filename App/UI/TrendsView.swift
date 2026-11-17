@@ -3,13 +3,22 @@ import SwiftUI
 struct TrendsView: View {
     @Environment(AppModel.self) private var model
     @State private var range = 30
+    /// true, wenn die Seite in einen bestehenden NavigationStack geschoben wird.
+    var embedded = false
 
     private var today: String { DayKey.today() }
 
     var body: some View {
-        NavigationStack {
+        if embedded {
+            page
+        } else {
+            NavigationStack { page }
+        }
+    }
+
+    private var page: some View {
             ZStack {
-                Theme.bg.ignoresSafeArea()
+                ScreenBackground()
                 ScrollView {
                     VStack(spacing: 14) {
                         Picker("Zeitraum", selection: $range) {
@@ -35,7 +44,6 @@ struct TrendsView: View {
                 }
             }
             .navigationTitle("Trends")
-        }
     }
 
     private var journalInsightsCard: some View {

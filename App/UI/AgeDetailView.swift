@@ -22,7 +22,7 @@ struct AgeDetailView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
         }
-        .background(Theme.bg.ignoresSafeArea())
+        .background(ScreenBackground())
         .navigationTitle(model.loc("Pulse Alter", "Pulse Age"))
         .navigationBarTitleDisplayMode(.inline)
     }

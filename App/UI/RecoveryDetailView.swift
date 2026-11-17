@@ -5,7 +5,7 @@ struct RecoveryDetailView: View {
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            ScreenBackground()
             ScrollView {
                 VStack(spacing: 14) {
                     if let recovery = model.recovery(for: model.selectedDayKey) {

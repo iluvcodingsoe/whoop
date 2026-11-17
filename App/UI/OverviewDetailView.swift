@@ -61,7 +61,7 @@ struct OverviewDetailView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
         }
-        .background(Theme.bg.ignoresSafeArea())
+        .background(ScreenBackground())
         .navigationTitle(model.loc("Übersicht", "Overview"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
