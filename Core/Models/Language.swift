@@ -133,3 +133,15 @@ public extension HealthMonitor {
         return base
     }
 }
+
+public extension RecoveryComponent {
+    /// Detail-Text in der App-Sprache. Die Engine formatiert deutsch
+    /// ("S/min", "Ø"); für Englisch werden die Kürzel ersetzt.
+    func detail(_ lang: PulseLanguage) -> String {
+        guard lang == .en else { return detail }
+        return detail
+            .replacingOccurrences(of: "S/min", with: "bpm")
+            .replacingOccurrences(of: "Ø", with: "avg")
+            .replacingOccurrences(of: "Performance", with: "performance")
+    }
+}

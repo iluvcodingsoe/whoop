@@ -186,7 +186,7 @@ struct DashboardView: View {
                                         .font(.caption)
                                         .foregroundStyle(Theme.textSecondary)
                                     Spacer()
-                                    Text(component.detail)
+                                    Text(component.detail(model.language))
                                         .font(.caption.monospacedDigit())
                                         .foregroundStyle(Theme.textPrimary)
                                 }
