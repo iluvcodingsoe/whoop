@@ -270,7 +270,7 @@ enum LogKind: String, CaseIterable, Identifiable {
         }
     }
 
-    func title(_ model: AppModel) -> String {
+    @MainActor func title(_ model: AppModel) -> String {
         switch self {
         case .water: return model.loc("Wasser", "Water")
         case .food: return model.loc("Essen", "Food")
@@ -288,7 +288,7 @@ enum LogKind: String, CaseIterable, Identifiable {
         }
     }
 
-    func summary(_ log: DailyLog, _ model: AppModel) -> String? {
+    @MainActor func summary(_ log: DailyLog, _ model: AppModel) -> String? {
         switch self {
         case .water:
             if log.waterGlasses == 0 { return model.loc("Noch nichts", "None today") }

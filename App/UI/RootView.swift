@@ -49,7 +49,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         }
     }
 
-    func title(_ model: AppModel) -> String {
+    @MainActor func title(_ model: AppModel) -> String {
         switch self {
         case .home: return model.loc("Start", "Home")
         case .health: return model.loc("Gesundheit", "Health")
