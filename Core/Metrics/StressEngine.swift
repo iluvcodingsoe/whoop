@@ -55,7 +55,7 @@ public enum StressEngine {
     /// Fenstergröße in Minuten.
     public static let windowMinutes = 15.0
     /// Anteil der HF-Reserve, der einem Stress von 3 entspricht.
-    static let fullScaleReserve = 0.35
+    static let fullScaleReserve = 0.45
 
     public static func compute(record: DayRecord, restingHR: Double?, maxHR: Double) -> StressResult? {
         guard let rhr = restingHR ?? record.restingHR, !record.hrSamples.isEmpty else { return nil }
@@ -79,14 +79,21 @@ public enum StressEngine {
             buckets[start, default: []].append(sample.bpm)
         }
 
-        let points: [StressPoint] = buckets.keys.sorted().compactMap { start in
+        let raw: [StressPoint] = buckets.keys.sorted().compactMap { start in
             guard let values = buckets[start], values.count >= 3 else { return nil }
             let sorted = values.sorted()
             let median = sorted[sorted.count / 2]
             let fraction = (median - rhr) / (reserve * fullScaleReserve)
             return StressPoint(t: start, value: Stats.clamp(fraction * 3, 0, 3))
         }
-        guard !points.isEmpty else { return nil }
+        guard !raw.isEmpty else { return nil }
+
+        // Gleitender Mittelwert über drei Fenster glättet den Verlauf.
+        let points: [StressPoint] = raw.indices.map { i in
+            let window = raw[max(0, i - 1)...min(raw.count - 1, i + 1)]
+            let mean = window.reduce(0) { $0 + $1.value } / Double(window.count)
+            return StressPoint(t: raw[i].t, value: mean)
+        }
 
         let average = points.reduce(0) { $0 + $1.value } / Double(points.count)
         var low = 0.0, medium = 0.0, high = 0.0
