@@ -19,7 +19,7 @@ concurrency:
 jobs:
   screenshots:
     name: Simulator screenshots
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 40
 
     steps:
