@@ -85,7 +85,7 @@ struct RecoveryDetailView: View {
                                 .font(.caption2)
                                 .foregroundStyle(Theme.textSecondary)
                             Spacer()
-                            Text(component.detail)
+                            Text(component.detail(model.language))
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(Theme.textSecondary)
                         }
