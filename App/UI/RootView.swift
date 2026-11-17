@@ -66,19 +66,23 @@ struct MainTabs: View {
         @Bindable var model = model
         TabView(selection: $model.selectedTab) {
             HomeView()
+                .safeAreaPadding(.bottom, 78)
                 .tag(MainTab.home)
                 .toolbar(.hidden, for: .tabBar)
             HealthMonitorView()
+                .safeAreaPadding(.bottom, 78)
                 .tag(MainTab.health)
                 .toolbar(.hidden, for: .tabBar)
             JournalView()
+                .safeAreaPadding(.bottom, 78)
                 .tag(MainTab.journal)
                 .toolbar(.hidden, for: .tabBar)
             SettingsView()
+                .safeAreaPadding(.bottom, 78)
                 .tag(MainTab.more)
                 .toolbar(.hidden, for: .tabBar)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .overlay(alignment: .bottom) {
             FloatingTabBar(selection: $model.selectedTab)
         }
     }

@@ -77,30 +77,32 @@ struct JournalView: View {
     private var logTiles: some View {
         let log = model.dayLog(for: model.selectedDayKey)
         return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 ForEach(LogKind.allCases) { kind in
                     Button {
                         logSheet = kind
                     } label: {
                         VStack(alignment: .leading, spacing: 0) {
                             Image(systemName: kind.symbol)
-                                .font(.system(size: 26, weight: .regular))
+                                .font(.system(size: 24, weight: .regular))
                                 .foregroundStyle(kind.hasValue(log) ? kind.color : Theme.textPrimary.opacity(0.85))
-                                .frame(height: 30)
+                                .frame(height: 28)
                             Spacer(minLength: 10)
                             if let summary = kind.summary(log, model) {
                                 Text(summary)
-                                    .font(.system(size: 15))
+                                    .font(.system(size: 13))
                                     .foregroundStyle(Theme.textSecondary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
                             }
                             Text(kind.title(model))
-                                .font(.system(size: 19, weight: .medium))
+                                .font(.system(size: 17, weight: .medium))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                                 .foregroundStyle(Theme.textPrimary)
                         }
-                        .padding(18)
-                        .frame(width: 124, height: 136, alignment: .leading)
+                        .padding(14)
+                        .frame(width: 96, height: 118, alignment: .leading)
                         .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
                         .overlay(
                             RoundedRectangle(cornerRadius: 22, style: .continuous)

@@ -268,24 +268,25 @@ struct MonitorTile<Badge: View>: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.textSecondary)
             }
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 badge
                 VStack(alignment: .leading, spacing: 3) {
                     Text(status.uppercased())
-                        .font(.system(size: 14, weight: .bold))
-                        .kerning(1)
+                        .font(.system(size: 13, weight: .bold))
+                        .kerning(0.6)
                         .foregroundStyle(statusColor)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.6)
                     Text(detail)
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .minimumScaleFactor(0.6)
                 }
             }
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
     }
@@ -294,7 +295,7 @@ struct MonitorTile<Badge: View>: View {
 /// Quadratisches Icon-Feld mit getönter Fläche.
 struct TintedSquare<Content: View>: View {
     let color: Color
-    var size: CGFloat = 44
+    var size: CGFloat = 40
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -320,16 +321,18 @@ struct MetricRow: View {
     enum Trend { case up, down, flat }
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .center, spacing: 14) {
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .regular))
                 .foregroundStyle(Theme.textSecondary)
                 .frame(width: 30)
             VStack(alignment: .leading, spacing: 4) {
                 CapsLabel(text: title, size: 13)
-                Text(subtitle)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.textSecondary)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {

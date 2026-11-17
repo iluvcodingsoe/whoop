@@ -259,6 +259,9 @@ final class AppModel {
         updateDayLog(DayKey.addDays(today, -12)) { $0.weightKg = 62.4 }
         updateDayLog(DayKey.addDays(today, -20)) { $0.weightKg = 62.9 }
         recomputeJournalInsights()
+        if args.contains("-screenshotYesterday") {
+            selectedDayKey = DayKey.addDays(today, -1)
+        }
     }
 
     // MARK: - Abgeleitete Konfiguration

@@ -127,6 +127,7 @@ struct HomeView: View {
                     .padding(.trailing, 10)
                     .frame(height: 30)
                     .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .fixedSize()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -150,7 +151,7 @@ struct HomeView: View {
         let target = recovery.map { StrainEngine.targetStrain(forRecovery: $0.score) }
         let sleepPerf: Double? = (sleep?.hasData == true) ? sleep?.performance : nil
 
-        return HStack(alignment: .top, spacing: 16) {
+        return HStack(alignment: .top, spacing: 20) {
             NavigationLink {
                 SleepDetailView()
             } label: {
@@ -191,6 +192,7 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
         }
+        .padding(.horizontal, 4)
         .id(key)
     }
 
