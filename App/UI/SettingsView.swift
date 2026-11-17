@@ -21,7 +21,7 @@ struct SettingsView: View {
                 aboutSection
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.bg)
+            .background(ScreenBackground())
             .navigationTitle(model.loc("Mehr", "More"))
             .sheet(isPresented: $showConnectSheet) {
                 ConnectSheet()

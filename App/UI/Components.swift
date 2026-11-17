@@ -392,10 +392,12 @@ struct JournalPromptSheet: View {
                         dismiss()
                     } label: {
                         Text(model.loc("Fertig", "Done"))
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .bold))
+                            .kerning(1.6)
+                            .textCase(.uppercase)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.accent))
+                            .frame(height: 56)
+                            .background(Capsule().fill(Color.white))
                             .foregroundStyle(Color.black)
                     }
                     .padding(.top, 6)

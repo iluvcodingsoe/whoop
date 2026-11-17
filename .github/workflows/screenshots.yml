@@ -1,0 +1,88 @@
+name: screenshots
+
+# Builds the app for the iOS Simulator, opens it in demo mode and saves a
+# screenshot of each tab to the ci-screenshots branch, so design changes can
+# be checked without a phone.
+
+on:
+  push:
+    branches: [redesign]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: Simulator screenshots
+    runs-on: macos-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build for simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Pulse.xcodeproj \
+            -scheme Pulse \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          test -d build/Build/Products/Debug-iphonesimulator/Pulse.app
+
+      - name: Boot simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          phones = [d for runtime, ds in sorted(devices.items()) if "iOS" in runtime for d in ds
+                    if d["name"].startswith("iPhone") and "Pro" in d["name"] and "Max" not in d["name"]]
+          print(phones[-1]["udid"])
+          ')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Pulse.app
+
+      - name: Take screenshots
+        run: |
+          mkdir -p shots
+          shoot() {
+            name=$1; shift
+            xcrun simctl launch --terminate-running-process "$UDID" net.dehlwes.pulse -screenshotDemo "$@"
+            sleep 9
+            xcrun simctl io "$UDID" screenshot "shots/$name.png"
+          }
+          shoot 1-home -screenshotTab home
+          shoot 2-home-bottom -screenshotTab home -screenshotScroll
+          shoot 3-health -screenshotTab health
+          shoot 4-health-bottom -screenshotTab health -screenshotScroll
+          shoot 5-journal -screenshotTab journal
+          shoot 6-journal-bottom -screenshotTab journal -screenshotScroll
+          shoot 7-more -screenshotTab more
+          for page in stress review vital; do
+            shoot "8-$page" -screenshotTab home -screenshotPage "$page"
+          done
+          ls -la shots
+
+      - name: Publish to ci-screenshots branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd shots
+          git init -q -b ci-screenshots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          echo "Screenshots of ${GITHUB_SHA}" > README.md
+          git add -A
+          git commit -qm "Screenshots of ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-screenshots

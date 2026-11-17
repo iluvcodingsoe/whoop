@@ -1,18 +1,26 @@
 import SwiftUI
 
 enum Theme {
-    static let bg = Color(hex: 0x0B0F14)
-    static let card = Color(hex: 0x141A22)
-    static let cardElevated = Color(hex: 0x1C242E)
-    static let stroke = Color(hex: 0x232D38)
-    static let textPrimary = Color(hex: 0xF0F4F8)
-    static let textSecondary = Color(hex: 0x8A97A5)
+    static let bg = Color(hex: 0x16191D)
+    /// Hintergrund-Verlauf aller Hauptseiten: oben etwas heller.
+    static let bgTop = Color(hex: 0x262B31)
+    static let bgGradient = LinearGradient(
+        colors: [Color(hex: 0x262B31), Color(hex: 0x181B1F), Color(hex: 0x111316)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    static let card = Color(hex: 0x2B3036)
+    static let cardElevated = Color(hex: 0x363C43)
+    static let stroke = Color(hex: 0x3A4149)
+    static let track = Color(hex: 0x3A4048)
+    static let textPrimary = Color(hex: 0xF4F6F8)
+    static let textSecondary = Color(hex: 0x9CA3AB)
 
-    static let green = Color(hex: 0x2FD673)
-    static let yellow = Color(hex: 0xF5C542)
-    static let red = Color(hex: 0xEF5350)
-    static let strainBlue = Color(hex: 0x4A9DFF)
-    static let sleepPurple = Color(hex: 0x9B8CFF)
+    static let green = Color(hex: 0x19E39A)
+    static let yellow = Color(hex: 0xFFD60A)
+    static let red = Color(hex: 0xFF4D5E)
+    static let strainBlue = Color(hex: 0x0A93F5)
+    static let sleepPurple = Color(hex: 0x7FA6C6)
     static let teal = Color(hex: 0x35D0BA)
     /// Main app accent: buttons, tabs, toggles, highlights.
     static let accent = Color(hex: 0x3D8BFF)

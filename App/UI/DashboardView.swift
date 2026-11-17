@@ -1,108 +1,402 @@
 import SwiftUI
 
-struct DashboardView: View {
+/// Startseite: Kopfleiste, drei Ringe, Coach-Karte, Health- und Stress-Monitor, "My Day".
+struct HomeView: View {
     @Environment(AppModel.self) private var model
-    @State private var showCustomize = false
+    @State private var logSheet: LogKind?
+    /// Nur für CI-Screenshots: öffnet direkt eine Unterseite.
+    @State private var screenshotPage: String?
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.bg.ignoresSafeArea()
+                ScreenBackground()
                 if model.hasData {
                     content
                 } else {
-                    EmptyDataHint(text: model.isConnected
-                        ? model.loc("Noch keine Daten – starte oben rechts eine Synchronisierung.", "No data yet – tap sync in the top right corner.")
-                        : model.loc("Keine Daten vorhanden. Verbinde Google Health oder starte den Demo-Modus unter „Mehr“.", "No data. Connect Google Health or start demo mode under More."))
-                }
-            }
-            .navigationTitle(Fmt.dayTitle(model.selectedDayKey))
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                if model.demoMode {
-                    ToolbarItem(placement: .topBarLeading) {
-                        PillBadge(text: "Demo", color: Theme.yellow)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showCustomize = true
-                    } label: {
-                        Image(systemName: "slider.horizontal.3")
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if model.isConnected {
-                        Button {
-                            Task { await model.syncNow() }
-                        } label: {
-                            if model.syncing {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                            }
-                        }
-                        .disabled(model.syncing)
+                    VStack(spacing: 0) {
+                        topBar
+                            .padding(.horizontal, 20)
+                        Spacer()
+                        EmptyDataHint(text: model.isConnected
+                            ? model.loc("Noch keine Daten – tippe oben rechts auf das Armband zum Synchronisieren.", "No data yet – tap the band in the top right to sync.")
+                            : model.loc("Keine Daten vorhanden. Verbinde Google Health oder starte den Demo-Modus unter „Mehr“.", "No data. Connect Google Health or start demo mode under More."))
+                            .padding(.horizontal, 32)
+                        Spacer()
                     }
                 }
             }
-            .sheet(isPresented: $showCustomize) {
-                DashboardCustomizeSheet()
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(item: $logSheet) { kind in
+                LogSheet(kind: kind, dayKey: model.selectedDayKey)
+            }
+            .navigationDestination(item: $screenshotPage) { page in
+                switch page {
+                case "stress": StressDetailView()
+                case "review": DayReviewView()
+                default: VitalDetailView(kind: .hrv)
+                }
+            }
+            .onAppear {
+                let args = ProcessInfo.processInfo.arguments
+                if let i = args.firstIndex(of: "-screenshotPage"), i + 1 < args.count {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { screenshotPage = args[i + 1] }
+                }
             }
         }
     }
 
     private var content: some View {
+        ScrollViewReader { proxy in
         ScrollView {
-            VStack(spacing: 14) {
-                DayChips()
+            VStack(spacing: 0) {
+                topBar
+
+                Text("PULSE")
+                    .font(.system(size: 34, weight: .medium))
+                    .kerning(7)
+                    .foregroundStyle(Theme.textPrimary.opacity(0.72))
+                    .padding(.top, 26)
+
+                rings
+                    .padding(.top, 22)
 
                 if model.syncing {
-                    syncBanner
+                    syncBanner.padding(.top, 20)
                 }
                 if let error = model.lastError, !model.syncing {
-                    errorBanner(error)
-                }
-                if let alert = model.healthAlert {
-                    alertBanner(alert)
+                    errorBanner(error).padding(.top, 20)
                 }
 
-                ForEach(model.visibleModules) { module in
-                    moduleView(module)
+                CoachCard()
+                    .padding(.top, 30)
+
+                HStack(spacing: 14) {
+                    healthTile
+                    stressTile
                 }
+                .padding(.top, 22)
+
+                myDay
+                    .padding(.top, 34)
+
                 footer
+                    .padding(.top, 18)
+                ScreenshotScrollAnchor(proxy: proxy)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
+        .scrollIndicators(.hidden)
         .refreshable {
             if model.isConnected {
                 await model.syncNow()
             }
         }
+        }
     }
 
-    // MARK: - Module
+    // MARK: - Kopfleiste
 
-    @ViewBuilder
-    private func moduleView(_ module: DashboardModule) -> some View {
-        switch module {
-        case .overview: TodayOverviewCard()
-        case .recovery: recoveryCard
-        case .age: ageCard
-        case .sleep: sleepCard
-        case .strain: strainCard
-        case .workouts: WorkoutsCard()
-        case .steps: StepsCard()
-        case .health: healthCard
-        case .journal: JournalCard()
+    private var topBar: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: -6) {
+                Button {
+                    model.selectedTab = .more
+                } label: {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundStyle(Theme.textPrimary)
+                        .background(Circle().fill(Theme.bgTop))
+                }
+                .buttonStyle(.plain)
+                .zIndex(1)
+
+                if model.streakDays > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(
+                                LinearGradient(colors: [Theme.yellow, Theme.orange, Theme.red], startPoint: .top, endPoint: .bottom)
+                            )
+                        Text("\(model.streakDays)")
+                            .font(.system(size: 15, weight: .bold).monospacedDigit())
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    .padding(.leading, 14)
+                    .padding(.trailing, 10)
+                    .frame(height: 30)
+                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            DayStepper()
+                .fixedSize()
+
+            DeviceStatus()
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.top, 6)
+    }
+
+    // MARK: - Ringe
+
+    private var rings: some View {
+        let key = model.selectedDayKey
+        let recovery = model.recovery(for: key)
+        let sleep = model.sleep(for: key)
+        let strain = model.strain(for: key)
+        let target = recovery.map { StrainEngine.targetStrain(forRecovery: $0.score) }
+        let sleepPerf: Double? = (sleep?.hasData == true) ? sleep?.performance : nil
+
+        return HStack(alignment: .top, spacing: 16) {
+            NavigationLink {
+                SleepDetailView()
+            } label: {
+                ScoreRing(
+                    value: sleepPerf.map { "\(Int($0.rounded()))" } ?? "–",
+                    unit: sleepPerf == nil ? "" : "%",
+                    fraction: (sleepPerf ?? 0) / 100,
+                    color: Theme.sleepPurple,
+                    label: model.loc("Schlaf", "Sleep")
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                RecoveryDetailView()
+            } label: {
+                ScoreRing(
+                    value: recovery.map { "\($0.score)" } ?? "–",
+                    unit: recovery == nil ? "" : "%",
+                    fraction: recovery.map { Double($0.score) / 100 } ?? 0,
+                    color: recovery.map { Theme.recoveryColor(zone: $0.zone) } ?? Theme.textSecondary,
+                    label: "Recovery"
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                StrainDetailView()
+            } label: {
+                ScoreRing(
+                    value: strain.map { String(format: "%.1f", $0.strain) } ?? "–",
+                    unit: "",
+                    fraction: strain.map { $0.strain / 21 } ?? 0,
+                    color: Theme.strainBlue,
+                    marker: target.map { $0 / 21 },
+                    label: "Strain"
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .id(key)
+    }
+
+    // MARK: - Monitore
+
+    private var healthTile: some View {
+        let measured = model.healthStatuses.filter { $0.state != .noData }
+        let calibrating = !measured.isEmpty && measured.allSatisfy { $0.state == .calibrating }
+        let inRange = measured.filter { $0.state == .inRange || $0.state == .calibrating }.count
+        let ok = inRange == measured.count
+        let color: Color = measured.isEmpty || calibrating ? Theme.textSecondary : (ok ? Theme.green : Theme.orange)
+        let status: String = {
+            if measured.isEmpty { return model.loc("Keine Daten", "No data") }
+            if calibrating { return model.loc("Kalibriert", "Calibrating") }
+            return ok ? model.loc("Im Bereich", "Within range") : model.loc("Auffällig", "Out of range")
+        }()
+
+        return Button {
+            model.selectedTab = .health
+        } label: {
+            MonitorTile(
+                title: "Health monitor",
+                status: status,
+                statusColor: color,
+                detail: measured.isEmpty ? "–" : model.loc("\(inRange)/\(measured.count) im Bereich", "\(inRange)/\(measured.count) within range")
+            ) {
+                TintedSquare(color: color) {
+                    Image(systemName: ok || measured.isEmpty ? "checkmark" : "exclamationmark")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(color)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var stressTile: some View {
+        let stress = model.stress(for: model.selectedDayKey)
+        let latest = stress?.latest
+        let level = latest.map { StressLevel(score: $0.value) }
+        let color = level.map(Self.stressColor) ?? Theme.textSecondary
+
+        return NavigationLink {
+            StressDetailView()
+        } label: {
+            MonitorTile(
+                title: "Stress monitor",
+                status: level?.label(model.language) ?? model.loc("Keine Daten", "No data"),
+                statusColor: color,
+                detail: latest.map { Fmt.clock($0.t) } ?? "–"
+            ) {
+                TintedSquare(color: color) {
+                    Text(latest.map { String(format: "%.1f", $0.value) } ?? "–")
+                        .font(.system(size: 19, weight: .bold).monospacedDigit())
+                        .foregroundStyle(color)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    static func stressColor(_ level: StressLevel) -> Color {
+        switch level {
+        case .low: return Color(hex: 0x5AA9F2)
+        case .medium: return Theme.yellow
+        case .high: return Theme.orange
+        }
+    }
+
+    // MARK: - My Day
+
+    private var myDay: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("My Day")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Menu {
+                    Button {
+                        model.journalPromptDay = model.selectedDayKey
+                    } label: {
+                        Label("Check-in", systemImage: "checkmark.circle")
+                    }
+                    ForEach(LogKind.allCases) { kind in
+                        Button {
+                            logSheet = kind
+                        } label: {
+                            Label(kind.title(model), systemImage: kind.symbol)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(Color.black)
+                        .frame(width: 50, height: 50)
+                        .background(RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Color.white))
+                }
+            }
+
+            NavigationLink {
+                DayReviewView()
+            } label: {
+                HStack(spacing: 16) {
+                    Image(systemName: "moon")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(Theme.textPrimary.opacity(0.75))
+                    Text(model.loc("Dein Tag im Rückblick", "Your day in review"))
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                .padding(.horizontal, 22)
+                .frame(height: 68)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(LinearGradient(
+                            colors: [Color(hex: 0x33335A), Color(hex: 0x2D3A50)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
+            dayRows
+        }
+    }
+
+    private var dayRows: some View {
+        let key = model.selectedDayKey
+        let record = model.record(for: key)
+        let age = model.ageResult(for: key)
+        let workouts = record?.workouts ?? []
+        let topWorkout = workouts.max { ($0.strain ?? 0) < ($1.strain ?? 0) }
+
+        return Panel(padding: 0) {
+            VStack(spacing: 0) {
+                NavigationLink {
+                    StrainDetailView()
+                } label: {
+                    MetricRow(
+                        symbol: "figure.run",
+                        title: model.loc("Aktivitäten", "Activities"),
+                        subtitle: topWorkout.map { "\($0.name) · \(Int($0.durationMinutes.rounded())) min" }
+                            ?? model.loc("Kein Workout erfasst", "No workout recorded"),
+                        value: "\(workouts.count)",
+                        unit: workouts.count == 1 ? "workout" : "workouts"
+                    )
+                }
+                .buttonStyle(.plain)
+                PanelDivider()
+                NavigationLink {
+                    StrainDetailView()
+                } label: {
+                    MetricRow(
+                        symbol: "shoeprints.fill",
+                        title: model.loc("Schritte", "Steps"),
+                        subtitle: model.loc("Ziel 8.000", "Goal 8,000"),
+                        value: record?.steps.map { $0.formatted(.number.grouping(.automatic)) } ?? "–",
+                        unit: ""
+                    )
+                }
+                .buttonStyle(.plain)
+                PanelDivider()
+                NavigationLink {
+                    AgeDetailView()
+                } label: {
+                    MetricRow(
+                        symbol: "hourglass",
+                        title: "Pulse Age",
+                        subtitle: age?.deltaYears.map { DashboardView.deltaText($0) } ?? model.loc("Wird kalibriert", "Calibrating"),
+                        value: age?.pulseAge.map { "\(Int($0.rounded()))" } ?? "–",
+                        unit: model.loc("Jahre", "yrs")
+                    )
+                }
+                .buttonStyle(.plain)
+                PanelDivider()
+                NavigationLink {
+                    TrendsView(embedded: true)
+                } label: {
+                    MetricRow(
+                        symbol: "chart.xyaxis.line",
+                        title: "Trends",
+                        subtitle: model.loc("7, 30 und 90 Tage", "7, 30 and 90 days"),
+                        value: "",
+                        unit: ""
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
         }
     }
 
     // MARK: - Banner
 
     private var syncBanner: some View {
-        SectionCard {
+        Panel(padding: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     ProgressView()
@@ -117,7 +411,7 @@ struct DashboardView: View {
     }
 
     private func errorBanner(_ message: String) -> some View {
-        SectionCard {
+        Panel(padding: 16) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(Theme.yellow)
@@ -136,135 +430,240 @@ struct DashboardView: View {
         }
     }
 
-    private func alertBanner(_ alert: HealthAlert) -> some View {
-        SectionCard {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "waveform.path.ecg.rectangle.fill")
-                    .foregroundStyle(Theme.orange)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.loc("Gesundheits-Hinweis", "Health notice"))
-                        .font(.subheadline.weight(.semibold))
+    private var footer: some View {
+        Group {
+            if let lastSync = model.lastSyncAt {
+                Text(model.loc("Letzter Sync: \(Fmt.relative(lastSync))", "Last sync: \(Fmt.relative(lastSync))"))
+            } else if model.demoMode {
+                Text(model.loc("Demo-Modus – generierte Beispieldaten", "Demo mode – generated sample data"))
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(Theme.textSecondary)
+    }
+}
+
+// MARK: - Coach-Karte
+
+/// Ein Hinweis des Coaches.
+struct CoachTip: Identifiable {
+    let id: String
+    let title: String
+    let message: String
+}
+
+/// Gestapelte Karte mit Tageshinweisen. Der Zähler rechts blättert weiter.
+struct CoachCard: View {
+    @Environment(AppModel.self) private var model
+    @State private var index = 0
+
+    private var tips: [CoachTip] {
+        let key = model.selectedDayKey
+        var result: [CoachTip] = []
+        let recovery = model.recovery(for: key)
+        let strain = model.strain(for: key)?.strain ?? 0
+        let isToday = key == DayKey.today()
+
+        if let recovery {
+            let target = StrainEngine.targetStrain(forRecovery: recovery.score)
+            let t = String(format: "%.1f", target)
+            if strain >= target {
+                result.append(CoachTip(
+                    id: "strain",
+                    title: model.loc("Ziel übertroffen", "Past your target"),
+                    message: isToday
+                        ? model.loc("Du hast dein Tagesziel überschritten. Setze heute Nacht auf Schlaf, um dich zu erholen.", "You are past today\u{2019}s target. Prioritise sleep tonight to recover.")
+                        : model.loc("Du lagst über deinem Ziel von \(t).", "You went past your target of \(t) that day.")
+                ))
+            } else if target - strain <= 2 {
+                result.append(CoachTip(
+                    id: "strain",
+                    title: model.loc("Fast am Ziel", "Almost at your target"),
+                    message: model.loc("Noch \(String(format: "%.1f", target - strain)) bis zu deinem Ziel von \(t). Eine kurze Einheit reicht.", "You\u{2019}re \(String(format: "%.1f", target - strain)) away from today\u{2019}s target of \(t). A short session gets you there.")
+                ))
+            } else {
+                switch recovery.zone {
+                case .green:
+                    result.append(CoachTip(id: "strain", title: model.loc("Bereit für mehr", "Ready to perform"),
+                        message: model.loc("Deine Recovery ist hoch. Peile heute einen Strain von \(t) an.", "Your recovery is high. Aim for a strain of \(t) today.")))
+                case .yellow:
+                    result.append(CoachTip(id: "strain", title: model.loc("Halten", "Maintain"),
+                        message: model.loc("Du bist teilweise erholt. Moderate Belastung bis \(t) ist ideal.", "You\u{2019}re partly recovered. Moderate effort up to \(t) is ideal.")))
+                case .red:
+                    result.append(CoachTip(id: "strain", title: model.loc("Ruhig angehen", "Take it easy"),
+                        message: model.loc("Deine Recovery ist niedrig. Bleib unter \(t) und gönn dir Ruhe.", "Your recovery is low. Stay under \(t) and give your body rest.")))
+                }
+            }
+        } else {
+            result.append(CoachTip(id: "calibrating", title: model.loc("Kalibrierung", "Calibrating"),
+                message: model.loc("Trage dein Armband ein paar Nächte, dann gibt es hier Tipps.", "Wear your band for a few nights and tips will show up here.")))
+        }
+
+        if isToday, let bed = model.bedtimeTonight?.recommendedBedtimeMinutes {
+            result.append(CoachTip(id: "bed", title: model.loc("Schlafenszeit", "Bedtime"),
+                message: model.loc("Geh heute bis \(Fmt.clockFromMinutes(bed)) ins Bett, um deinen Schlafbedarf zu decken.", "Be in bed by \(Fmt.clockFromMinutes(bed)) tonight to cover your sleep need.")))
+        }
+        if let alert = model.healthAlert {
+            result.append(CoachTip(id: "health", title: model.loc("Gesundheits-Hinweis", "Health notice"), message: alert.message))
+        }
+        if let sleep = model.sleep(for: key), sleep.hasData, sleep.debtAfterMinutes > 30 {
+            result.append(CoachTip(id: "debt", title: model.loc("Schlafschuld", "Sleep debt"),
+                message: model.loc("Dir fehlen \(Fmt.hm(sleep.debtAfterMinutes)) h Schlaf. Eine frühere Nacht hilft.", "You\u{2019}re carrying \(Fmt.hm(sleep.debtAfterMinutes)) h of sleep debt. An earlier night helps.")))
+        }
+        return result
+    }
+
+    var body: some View {
+        let tips = tips
+        let current = tips.isEmpty ? nil : tips[index % tips.count]
+
+        ZStack(alignment: .bottom) {
+            if tips.count > 1 {
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Theme.card.opacity(0.55))
+                    .padding(.horizontal, 22)
+                    .offset(y: 12)
+            }
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(current?.title ?? "")
+                        .font(.system(size: 23, weight: .medium))
                         .foregroundStyle(Theme.textPrimary)
-                    Text(alert.message)
-                        .font(.caption)
-                        .foregroundStyle(Theme.textSecondary)
+                    Text(current?.message ?? "")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Theme.textPrimary.opacity(0.78))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineSpacing(3)
                 }
-                Spacer()
-            }
-        }
-    }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .id(current?.id)
+                .transition(.opacity)
 
-    // MARK: - Recovery
-
-    private var recoveryCard: some View {
-        NavigationLink {
-            RecoveryDetailView()
-        } label: {
-            SectionCard("Recovery") {
-                if let recovery = model.recovery(for: model.selectedDayKey) {
-                    HStack(spacing: 18) {
-                        RingGauge(
-                            progress: Double(recovery.score) / 100,
-                            color: Theme.recoveryColor(zone: recovery.zone),
-                            lineWidth: 14
-                        ) {
-                            VStack(spacing: 0) {
-                                Text("\(recovery.score)")
-                                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.textPrimary)
-                                Text("%")
-                                    .font(.headline)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
+                if tips.count > 1 {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) { index += 1 }
+                    } label: {
+                        VStack(spacing: 12) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 15, weight: .semibold))
+                            Text("\(tips.count - index % tips.count)")
+                                .font(.system(size: 16, weight: .semibold).monospacedDigit())
                         }
-                        .frame(width: 132, height: 132)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(recovery.components, id: \.key) { component in
-                                HStack {
-                                    Text(recoveryComponentLabel(component.key, fallback: component.label, model.language))
-                                        .font(.caption)
-                                        .foregroundStyle(Theme.textSecondary)
-                                    Spacer()
-                                    Text(component.detail(model.language))
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(Theme.textPrimary)
-                                }
-                            }
-                            if recovery.calibrating {
-                                Text(model.loc("Baseline kalibriert noch (< 5 Nächte)", "Baseline still calibrating (< 5 nights)"))
-                                    .font(.caption2)
-                                    .foregroundStyle(Theme.yellow)
-                            }
-                        }
+                        .foregroundStyle(Theme.textPrimary.opacity(0.85))
+                        .frame(width: 36)
+                        .padding(.vertical, 12)
+                        .background(Capsule().fill(Color.white.opacity(0.08)))
                     }
-                } else {
-                    EmptyDataHint(text: model.loc("Keine Recovery-Daten für diesen Tag.", "No recovery data for this day."))
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.leading, 26)
+            .padding(.trailing, 14)
+            .padding(.vertical, 22)
+            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+            .background(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Theme.card)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
+            )
         }
-        .buttonStyle(.plain)
+        .padding(.bottom, tips.count > 1 ? 12 : 0)
+        .onChange(of: model.selectedDayKey) { _, _ in index = 0 }
     }
+}
 
-    // MARK: - Pulse Alter
+// MARK: - Tagesrückblick
 
-    private var ageCard: some View {
-        NavigationLink {
-            AgeDetailView()
-        } label: {
-            SectionCard(model.loc("Pulse Alter", "Pulse Age")) {
-                if let result = model.ageResult(for: model.selectedDayKey) {
-                    if let pulseAge = result.pulseAge, let delta = result.deltaYears {
-                        HStack(spacing: 18) {
-                            VStack(spacing: 0) {
-                                Text("\(Int(pulseAge.rounded()))")
-                                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.textPrimary)
-                                Text(model.loc("Jahre", "years"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                            .frame(width: 108)
+struct DayReviewView: View {
+    @Environment(AppModel.self) private var model
 
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(Self.deltaText(delta))
-                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                                    .foregroundStyle(Self.deltaColor(delta))
-                                Text(model.loc("Chronologisch: \(result.chronoAge) Jahre", "Chronological: \(result.chronoAge) years"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                                if let vo2 = result.vo2max {
-                                    Text(String(format: "VO₂max %.0f%@", vo2, result.vo2maxEstimated ? model.loc(" (geschätzt)", " (estimated)") : ""))
-                                        .font(.caption)
-                                        .foregroundStyle(Theme.textSecondary)
-                                }
-                                if result.calibrating {
-                                    Text(model.loc("kalibriert noch · Tag \(result.calibrationHave)/\(result.calibrationNeed)", "calibrating · day \(result.calibrationHave)/\(result.calibrationNeed)"))
-                                        .font(.caption2)
-                                        .foregroundStyle(Theme.yellow)
-                                }
-                            }
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(model.loc("Wird kalibriert …", "Calibrating …"))
-                                .font(.system(.title3, design: .rounded).weight(.bold))
-                                .foregroundStyle(Theme.textPrimary)
-                            Text(model.loc("Sammle mind. \(result.calibrationNeed) Tage Daten – aktuell Tag \(result.calibrationHave)/\(result.calibrationNeed).", "Collecting at least \(result.calibrationNeed) days of data – currently day \(result.calibrationHave)/\(result.calibrationNeed)."))
-                                .font(.caption)
-                                .foregroundStyle(Theme.textSecondary)
-                            ProgressView(value: Double(result.calibrationHave), total: Double(result.calibrationNeed))
-                                .tint(Theme.accent)
-                        }
+    var body: some View {
+        let key = model.selectedDayKey
+        let recovery = model.recovery(for: key)
+        let sleep = model.sleep(for: key)
+        let strain = model.strain(for: key)
+        let stress = model.stress(for: key)
+        let log = model.dayLog(for: key)
+        let entry = model.journalEntry(for: key)
+        let record = model.record(for: key)
+
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text(Fmt.dayTitle(key))
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+
+                Panel(padding: 0) {
+                    VStack(spacing: 0) {
+                        reviewRow("bolt.heart", "Recovery", recovery.map { "\($0.score)" } ?? "–", "%")
+                        PanelDivider()
+                        reviewRow("moon.zzz", model.loc("Schlaf", "Sleep"),
+                                  (sleep?.hasData == true) ? Fmt.hm(sleep!.sleptMinutes) : "–", "h")
+                        PanelDivider()
+                        reviewRow("flame", "Strain", strain.map { String(format: "%.1f", $0.strain) } ?? "–", "")
+                        PanelDivider()
+                        reviewRow("waveform.path", model.loc("Ø Stress", "Avg stress"), stress?.average.map { String(format: "%.1f", $0) } ?? "–", "/ 3")
+                        PanelDivider()
+                        reviewRow("shoeprints.fill", model.loc("Schritte", "Steps"), record?.steps.map { $0.formatted(.number) } ?? "–", "")
                     }
-                } else {
-                    EmptyDataHint(text: model.loc("Noch keine Daten für das Pulse Alter.", "No data for Pulse Age yet."))
+                    .padding(.horizontal, 20)
+                }
+
+                SectionHeading(text: "Log")
+                Panel(padding: 0) {
+                    VStack(spacing: 0) {
+                        reviewRow("drop", model.loc("Wasser", "Water"), "\(log.waterGlasses)", model.loc("Gläser", "glasses"))
+                        PanelDivider()
+                        reviewRow("fork.knife", model.loc("Essen", "Food"), "\(log.food.count)", model.loc("Einträge", "entries"))
+                        PanelDivider()
+                        reviewRow("face.smiling", model.loc("Stimmung", "Mood"), log.mood?.label(model.language) ?? "–", "")
+                    }
+                    .padding(.horizontal, 20)
+                }
+
+                if !entry.factors.isEmpty {
+                    SectionHeading(text: "Check-in")
+                    FlowTags(tags: entry.factors.sorted { $0.rawValue < $1.rawValue }.map { ($0.symbol, $0.label(model.language)) })
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 30)
         }
-        .buttonStyle(.plain)
+        .background(ScreenBackground())
+        .navigationTitle(model.loc("Rückblick", "Review"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 
+    private func reviewRow(_ symbol: String, _ title: String, _ value: String, _ unit: String) -> some View {
+        MetricRow(symbol: symbol, title: title, subtitle: "", value: value, unit: unit, showChevron: false)
+    }
+}
+
+/// Einfache Tag-Liste (Icon + Text) in Zeilen.
+struct FlowTags: View {
+    let tags: [(String, String)]
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], alignment: .leading, spacing: 10) {
+            ForEach(tags, id: \.1) { symbol, text in
+                Label(text, systemImage: symbol)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Theme.textPrimary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.card))
+            }
+        }
+    }
+}
+
+// MARK: - Hilfen für Pulse Age (auch von AgeDetailView genutzt)
+
+enum DashboardView {
     static func deltaText(_ delta: Double) -> String {
         let rounded = Int(abs(delta).rounded())
         if Fmt.language == .de {
@@ -281,243 +680,5 @@ struct DashboardView: View {
         if delta <= -1 { return Theme.green }
         if delta >= 1 { return Theme.orange }
         return Theme.textSecondary
-    }
-
-    // MARK: - Schlaf
-
-    private var sleepCard: some View {
-        NavigationLink {
-            SleepDetailView()
-        } label: {
-            SectionCard(model.loc("Schlaf", "Sleep")) {
-                if let sleep = model.sleep(for: model.selectedDayKey), sleep.hasData {
-                    HStack(spacing: 18) {
-                        RingGauge(
-                            progress: sleep.performance / 100,
-                            color: Theme.sleepPurple,
-                            lineWidth: 10
-                        ) {
-                            VStack(spacing: 0) {
-                                Text("\(Int(sleep.performance.rounded()))")
-                                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.textPrimary)
-                                Text("%")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        .frame(width: 92, height: 92)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(model.loc("\(Fmt.hm(sleep.sleptMinutes)) von \(Fmt.hm(sleep.needMinutes)) h", "\(Fmt.hm(sleep.sleptMinutes)) of \(Fmt.hm(sleep.needMinutes)) h"))
-                                .font(.system(.title3, design: .rounded).weight(.bold))
-                                .foregroundStyle(Theme.textPrimary)
-                            if let bed = sleep.bedTime, let wake = sleep.wakeTime {
-                                Text(model.loc("\(Fmt.clock(bed)) – \(Fmt.clock(wake)) Uhr", "\(Fmt.clock(bed)) – \(Fmt.clock(wake))"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                            if sleep.debtAfterMinutes > 5 {
-                                Text(model.loc("Schlafschuld: \(Fmt.hm(sleep.debtAfterMinutes)) h", "Sleep debt: \(Fmt.hm(sleep.debtAfterMinutes)) h"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.orange)
-                            } else {
-                                Text(model.loc("Keine Schlafschuld", "No sleep debt"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.green)
-                            }
-                            if model.selectedDayKey == DayKey.today(),
-                               let bed = model.bedtimeTonight?.recommendedBedtimeMinutes {
-                                Label(model.loc("Ziel heute: bis \(Fmt.clockFromMinutes(bed)) ins Bett", "Tonight: in bed by \(Fmt.clockFromMinutes(bed))"), systemImage: "bed.double")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.accent)
-                            }
-                        }
-                    }
-                } else {
-                    EmptyDataHint(text: model.loc("Kein Schlaf für diesen Tag erfasst.", "No sleep recorded for this day."))
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Strain
-
-    private var strainCard: some View {
-        NavigationLink {
-            StrainDetailView()
-        } label: {
-            SectionCard(model.loc("Tagesbelastung", "Daily strain")) {
-                if let strain = model.strain(for: model.selectedDayKey) {
-                    let target = model.recovery(for: model.selectedDayKey)
-                        .map { StrainEngine.targetStrain(forRecovery: $0.score) }
-                    HStack(spacing: 18) {
-                        ArcGauge(
-                            fraction: strain.strain / 21,
-                            color: Theme.strainBlue,
-                            lineWidth: 12,
-                            marker: target.map { $0 / 21 }
-                        ) {
-                            VStack(spacing: 0) {
-                                Text(String(format: "%.1f", strain.strain))
-                                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.textPrimary)
-                                Text(model.loc("von 21", "of 21"))
-                                    .font(.caption2)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        .frame(width: 108, height: 108)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            if let target {
-                                Text(model.loc("Ziel heute: \(String(format: "%.1f", target))", "Today\u{2019}s target: \(String(format: "%.1f", target))"))
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Theme.strainBlue)
-                            }
-                            let active = strain.zoneMinutes.dropFirst(2).reduce(0, +)
-                            Text(model.loc("\(Int(active.rounded())) min fordernd oder härter", "\(Int(active.rounded())) min demanding or harder"))
-                                .font(.caption)
-                                .foregroundStyle(Theme.textSecondary)
-                            if let record = model.selectedRecord, !record.workouts.isEmpty {
-                                ForEach(record.workouts.prefix(2), id: \.id) { workout in
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "figure.run")
-                                            .font(.caption)
-                                            .foregroundStyle(Theme.strainBlue)
-                                        Text(workout.name)
-                                            .font(.caption)
-                                            .foregroundStyle(Theme.textPrimary)
-                                        Spacer()
-                                        if let workoutStrain = workout.strain {
-                                            Text(String(format: "%.1f", workoutStrain))
-                                                .font(.caption.monospacedDigit().weight(.semibold))
-                                                .foregroundStyle(Theme.strainBlue)
-                                        }
-                                    }
-                                }
-                            } else {
-                                Text(model.loc("Kein Workout erfasst", "No workout recorded"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                            if let peak = strain.peakHR {
-                                Text(model.loc("Max. Puls: \(Int(peak.rounded()))", "Max HR: \(Int(peak.rounded()))"))
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                    }
-                } else {
-                    EmptyDataHint(text: model.loc("Keine Belastungsdaten für diesen Tag.", "No strain data for this day."))
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Health-Monitor
-
-    private var healthCard: some View {
-        SectionCard(model.loc("Health-Monitor", "Health monitor")) {
-            let statuses = model.healthStatuses
-            if statuses.allSatisfy({ $0.state == .noData }) {
-                EmptyDataHint(text: model.loc("Keine nächtlichen Messwerte für diesen Tag.", "No overnight measurements for this day."))
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(statuses, id: \.kind) { status in
-                        HStack {
-                            Circle()
-                                .fill(Theme.bandColor(status.state))
-                                .frame(width: 8, height: 8)
-                            Text(status.kind.label(model.language))
-                                .font(.caption)
-                                .foregroundStyle(Theme.textPrimary)
-                            Spacer()
-                            if let value = status.value {
-                                Text("\(status.kind.formatted(value)) \(status.kind.unit(model.language))")
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(Theme.textPrimary)
-                            }
-                            Text(Theme.bandLabel(status.state))
-                                .font(.caption2)
-                                .foregroundStyle(Theme.bandColor(status.state))
-                                .frame(width: 74, alignment: .trailing)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var footer: some View {
-        VStack(spacing: 4) {
-            if let lastSync = model.lastSyncAt {
-                Text(model.loc("Letzter Sync: \(Fmt.relative(lastSync))", "Last sync: \(Fmt.relative(lastSync))"))
-            } else if model.demoMode {
-                Text(model.loc("Demo-Modus – generierte Beispieldaten", "Demo mode – generated sample data"))
-            }
-        }
-        .font(.caption2)
-        .foregroundStyle(Theme.textSecondary)
-        .padding(.top, 4)
-    }
-}
-
-// MARK: - Tages-Chips
-
-struct DayChips: View {
-    @Environment(AppModel.self) private var model
-
-    private var keys: [String] {
-        let today = DayKey.today()
-        return DayKey.keys(from: DayKey.addDays(today, -20), to: today)
-    }
-
-    var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(keys, id: \.self) { key in
-                        chip(key).id(key)
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-            .onAppear {
-                proxy.scrollTo(model.selectedDayKey, anchor: .trailing)
-            }
-        }
-    }
-
-    private func chip(_ key: String) -> some View {
-        let isSelected = key == model.selectedDayKey
-        let score = model.recovery(for: key)?.score
-        return Button {
-            model.selectedDayKey = key
-        } label: {
-            VStack(spacing: 5) {
-                Text(Fmt.weekdayLetter(key))
-                    .font(.caption2)
-                    .foregroundStyle(Theme.textSecondary)
-                Text(Fmt.dayNumber(key))
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                Circle()
-                    .fill(score.map { Theme.recoveryColor(score: $0) } ?? Theme.stroke)
-                    .frame(width: 6, height: 6)
-            }
-            .frame(width: 42, height: 64)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? Theme.cardElevated : Theme.card)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? Theme.accent : .clear, lineWidth: 1.5)
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
