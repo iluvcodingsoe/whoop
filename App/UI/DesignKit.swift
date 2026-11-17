@@ -106,13 +106,14 @@ struct DayStepper: View {
                 if let i = index, i > 0 { model.selectedDayKey = keys[i - 1] }
             }
             Text(title.uppercased())
-                .font(.system(size: 14, weight: .bold))
-                .kerning(1.6)
+                .font(.system(size: 13, weight: .bold))
+                .kerning(1.4)
                 .foregroundStyle(Theme.textPrimary)
                 .lineLimit(1)
-                .padding(.horizontal, 16)
-                .frame(minWidth: 96)
-                .frame(height: 38)
+                .fixedSize()
+                .padding(.horizontal, 14)
+                .frame(minWidth: 88)
+                .frame(height: 36)
                 .background(Capsule().fill(Color.white.opacity(0.08)))
             arrow("chevron.right", enabled: index.map { $0 < keys.count - 1 } ?? false) {
                 if let i = index, i < keys.count - 1 { model.selectedDayKey = keys[i + 1] }
@@ -128,7 +129,7 @@ struct DayStepper: View {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(enabled ? Theme.textPrimary.opacity(0.8) : Theme.textSecondary.opacity(0.35))
-                .frame(width: 34, height: 38)
+                .frame(width: 28, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -171,14 +172,15 @@ struct DeviceStatus: View {
                 Task { await model.syncNow() }
             }
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 if model.syncing {
                     ProgressView()
                         .controlSize(.small)
                 } else if model.demoMode {
                     Text("Demo")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.textSecondary)
+                        .fixedSize()
                 }
                 BandIcon(active: model.isConnected || model.demoMode)
             }

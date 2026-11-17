@@ -66,19 +66,19 @@ struct MainTabs: View {
         @Bindable var model = model
         TabView(selection: $model.selectedTab) {
             HomeView()
-                .safeAreaPadding(.bottom, 78)
+                .contentMargins(.bottom, 100, for: .scrollContent)
                 .tag(MainTab.home)
                 .toolbar(.hidden, for: .tabBar)
             HealthMonitorView()
-                .safeAreaPadding(.bottom, 78)
+                .contentMargins(.bottom, 100, for: .scrollContent)
                 .tag(MainTab.health)
                 .toolbar(.hidden, for: .tabBar)
             JournalView()
-                .safeAreaPadding(.bottom, 78)
+                .contentMargins(.bottom, 100, for: .scrollContent)
                 .tag(MainTab.journal)
                 .toolbar(.hidden, for: .tabBar)
             SettingsView()
-                .safeAreaPadding(.bottom, 78)
+                .contentMargins(.bottom, 100, for: .scrollContent)
                 .tag(MainTab.more)
                 .toolbar(.hidden, for: .tabBar)
         }

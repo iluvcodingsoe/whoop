@@ -40,7 +40,7 @@ struct HomeView: View {
             .onAppear {
                 let args = ProcessInfo.processInfo.arguments
                 if let i = args.firstIndex(of: "-screenshotPage"), i + 1 < args.count {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { screenshotPage = args[i + 1] }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { screenshotPage = args[i + 1] }
                 }
             }
         }
@@ -105,7 +105,7 @@ struct HomeView: View {
                     model.selectedTab = .more
                 } label: {
                     Image(systemName: "person.crop.circle")
-                        .font(.system(size: 32, weight: .light))
+                        .font(.system(size: 30, weight: .light))
                         .foregroundStyle(Theme.textPrimary)
                         .background(Circle().fill(Theme.bgTop))
                 }
@@ -483,6 +483,9 @@ struct CoachCard: View {
                     title: model.loc("Fast am Ziel", "Almost at your target"),
                     message: model.loc("Noch \(String(format: "%.1f", target - strain)) bis zu deinem Ziel von \(t). Eine kurze Einheit reicht.", "You\u{2019}re \(String(format: "%.1f", target - strain)) away from today\u{2019}s target of \(t). A short session gets you there.")
                 ))
+            } else if !isToday {
+                result.append(CoachTip(id: "strain", title: model.loc("Unter dem Ziel", "Below your target"),
+                    message: model.loc("Du lagst bei \(String(format: "%.1f", strain)) von \(t). Eine ruhigere Belastung passt zu deiner Recovery.", "You reached \(String(format: "%.1f", strain)) of your \(t) target that day.")))
             } else {
                 switch recovery.zone {
                 case .green:
