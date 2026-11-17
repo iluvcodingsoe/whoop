@@ -59,7 +59,7 @@ jobs:
           shoot() {
             name=$1; shift
             xcrun simctl launch --terminate-running-process "$UDID" net.dehlwes.pulse -screenshotDemo -screenshotYesterday "$@"
-            sleep 11
+            sleep 22
             xcrun simctl io "$UDID" screenshot "shots/$name.png"
           }
           shoot 1-home -screenshotTab home
@@ -75,6 +75,9 @@ jobs:
           shoot 11-strain-activities -screenshotPage strain -screenshotSection activities
           shoot 12-strain-trends -screenshotPage strain -screenshotSection trends
           ls -la shots
+          # Absturzberichte mitnehmen, falls die App nicht startet.
+          find ~/Library/Logs/DiagnosticReports -name "Pulse*" -newer build.log -exec cp {} shots/ \; 2>/dev/null || true
+          xcrun simctl spawn "$UDID" log show --last 10m --predicate 'process == "Pulse"' --style compact 2>/dev/null | tail -200 > shots/pulse-log.txt || true
 
       - name: Publish to ci-screenshots branch
         env:
