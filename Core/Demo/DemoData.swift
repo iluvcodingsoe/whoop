@@ -96,10 +96,10 @@ public enum DemoData {
             if intensity > 0.2 {
                 let names: [String]
                 switch weekday {
-                case 2, 5: names = ["Intervalle", "Laufen"]
-                case 3: names = ["Krafttraining", "Rad"]
+                case 2, 5: names = ["Intervals", "Running"]
+                case 3: names = ["Strength Training", "Cycling"]
                 case 7: names = ["Langer Lauf", "Radtour"]
-                default: names = ["Laufen", "Rad", "Krafttraining"]
+                default: names = ["Running", "Cycling", "Strength Training"]
                 }
                 let name = names[Int(rng.next() % UInt64(names.count))]
                 let duration = 35 + intensity * 60 + Double.random(in: 0...20, using: &rng)

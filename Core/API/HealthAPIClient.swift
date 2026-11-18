@@ -20,9 +20,9 @@ public enum APIError: Error, LocalizedError, Sendable {
         case .http(let code, let body):
             return "HTTP \(code): \(body)"
         case .badResponse(let message):
-            return "Unerwartete Antwort: \(message)"
+            return "Unexpected response: \(message)"
         case .allVariantsFailed(let message):
-            return "Kein Lesepfad funktionierte: \(message)"
+            return "No read path worked: \(message)"
         }
     }
 }
@@ -373,7 +373,7 @@ public final class HealthAPIClient: @unchecked Sendable {
 
     private func getJSON(path: String, query: [URLQueryItem]) async throws -> [String: Any] {
         guard var components = URLComponents(url: Self.baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
-            throw APIError.badResponse("Ungültiger Pfad")
+            throw APIError.badResponse("Invalid path")
         }
         // ":reconcile" darf nicht als Pfadsegment encodiert werden
         components.path = components.path.replacingOccurrences(of: "%3A", with: ":")
@@ -381,7 +381,7 @@ public final class HealthAPIClient: @unchecked Sendable {
             components.queryItems = query
         }
         guard let url = components.url else {
-            throw APIError.badResponse("Ungültige URL")
+            throw APIError.badResponse("Invalid URL")
         }
 
         var attempt = 0
@@ -402,14 +402,14 @@ public final class HealthAPIClient: @unchecked Sendable {
                 throw APIError.badResponse(error.localizedDescription)
             }
             guard let http = response as? HTTPURLResponse else {
-                throw APIError.badResponse("Keine HTTP-Antwort")
+                throw APIError.badResponse("No HTTP response")
             }
 
             switch http.statusCode {
             case 200..<300:
                 guard let object = try? JSONSerialization.jsonObject(with: data),
                       let dict = object as? [String: Any] else {
-                    throw APIError.badResponse("Kein JSON-Objekt")
+                    throw APIError.badResponse("No JSON object")
                 }
                 return dict
             case 401 where !didRefresh:

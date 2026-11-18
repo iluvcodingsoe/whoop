@@ -82,12 +82,12 @@ public enum RecoveryEngine {
             } else {
                 score = 0.5
             }
-            raw.append(("rhr", "Ruhepuls", score, detail))
+            raw.append(("rhr", "Resting HR", score, detail))
         }
 
         if let performance = sleepPerformance {
             let score = Stats.clamp(performance / 100, 0.1, 1.0)
-            raw.append(("sleep", "Schlaf", score, String(format: "%.0f %% Performance", performance)))
+            raw.append(("sleep", "Sleep", score, String(format: "%.0f %% Performance", performance)))
         }
 
         if let resp = today.respiratoryRate {
@@ -100,7 +100,7 @@ public enum RecoveryEngine {
             } else {
                 score = 0.65
             }
-            raw.append(("resp", "Atemfrequenz", score, detail))
+            raw.append(("resp", "Respiration", score, detail))
         }
 
         let totalWeight = raw.reduce(0) { $0 + (weights[$1.key] ?? 0) }

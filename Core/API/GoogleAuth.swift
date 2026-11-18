@@ -106,13 +106,13 @@ public enum AuthError: Error, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .notConnected:
-            return "Nicht mit Google verbunden."
+            return "Not connected to Google."
         case .invalidClientID:
-            return "Ungültige Client-ID. Erwartet wird eine iOS-Client-ID der Form …apps.googleusercontent.com."
+            return "Invalid client ID. Use an iOS client ID ending in …apps.googleusercontent.com."
         case .exchangeFailed(let message):
-            return "Token-Austausch fehlgeschlagen: \(message)"
+            return "Token exchange failed: \(message)"
         case .refreshExpired:
-            return "Die Google-Anmeldung ist abgelaufen (im Testing-Modus laufen Refresh-Tokens nach 7 Tagen ab). Bitte neu verbinden."
+            return "Your Google sign-in expired (in Testing mode it lasts 7 days). Please reconnect."
         case .network(let message):
             return "Netzwerkfehler: \(message)"
         }
@@ -273,7 +273,7 @@ public final class GoogleAuth: @unchecked Sendable {
 
     private func tokenRequest(_ params: [String: String]) async throws -> TokenResponse {
         guard let url = URL(string: "https://oauth2.googleapis.com/token") else {
-            throw AuthError.network("Ungültige Token-URL")
+            throw AuthError.network("Invalid token URL")
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -289,7 +289,7 @@ public final class GoogleAuth: @unchecked Sendable {
         }
 
         guard let http = response as? HTTPURLResponse else {
-            throw AuthError.network("Keine HTTP-Antwort")
+            throw AuthError.network("No HTTP response")
         }
         guard (200..<300).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? ""
@@ -301,7 +301,7 @@ public final class GoogleAuth: @unchecked Sendable {
         do {
             return try JSONDecoder().decode(TokenResponse.self, from: data)
         } catch {
-            throw AuthError.exchangeFailed("Antwort nicht lesbar: \(error.localizedDescription)")
+            throw AuthError.exchangeFailed("Unreadable response: \(error.localizedDescription)")
         }
     }
 
