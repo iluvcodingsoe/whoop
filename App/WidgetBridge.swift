@@ -11,17 +11,12 @@ enum WidgetBridge {
     /// Gewählt wird der erste Kandidat, für den iOS einen Container herausgibt (das
     /// tut es nur mit passendem Entitlement). Gegenstück im Widget: `appGroup` in
     /// PulseWidget.swift, beide synchron halten.
-    static let appGroup: String = {
-        let fallback = "group.net.dehlwes.pulse"
-        var candidates = Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String] ?? []
-        candidates.append(fallback)
-        if let bundleID = Bundle.main.bundleIdentifier {
-            candidates.append("group." + bundleID)
-        }
-        return candidates.first {
-            FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0) != nil
-        } ?? fallback
-    }()
+    static let appGroup: String = AppGroupResolver.resolve(bundles: [Bundle.main])
+
+    /// Kann die App in den geteilten Container schreiben?
+    static var isAvailable: Bool {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) != nil
+    }
 
     enum Key {
         static let score = "recovery.score"
