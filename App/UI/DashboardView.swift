@@ -299,6 +299,8 @@ struct HomeView: View {
 
             ActivitiesCard()
 
+            TonightSleepCard()
+
             NavigationLink {
                 DayReviewView()
             } label: {
@@ -772,5 +774,93 @@ struct ActivitiesCard: View {
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.cardElevated.opacity(0.6)))
+    }
+}
+
+// MARK: - Schlafplan für heute Nacht (My Day)
+
+/// Empfohlene Bettzeit und Aufstehzeit für heute Nacht.
+struct TonightSleepCard: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let plan = model.bedtimeTonight
+
+        NavigationLink {
+            SleepDetailView()
+        } label: {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    CapsLabel(text: "Tonight\u{2019}s sleep", size: 13)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                if let plan, let bed = plan.recommendedBedtimeMinutes {
+                    HStack(alignment: .center, spacing: 0) {
+                        timeBlock(symbol: "sunset", time: Fmt.clockFromMinutes(bed), label: "Recommended\nbedtime", color: Theme.sleepPurple)
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(height: 1)
+                            .overlay(
+                                Line()
+                                    .stroke(Theme.textSecondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 10)
+                            .padding(.bottom, 26)
+                        timeBlock(symbol: "alarm", time: plan.habitualWakeMinutes.map { Fmt.clockFromMinutes($0) } ?? "–", label: "Wake-up\ntime", color: Theme.yellow)
+                    }
+
+                    HStack(spacing: 8) {
+                        Image(systemName: "bed.double")
+                            .font(.system(size: 13))
+                        Text("Sleep need \(Fmt.hm(plan.projectedNeedMinutes)) h" + (plan.debtMinutes > 15 ? " · includes \(Fmt.hm(plan.debtMinutes)) h of sleep debt" : ""))
+                            .font(.system(size: 14))
+                    }
+                    .foregroundStyle(Theme.textSecondary)
+                } else {
+                    Text("Wear your band for a few nights to get a bedtime recommendation.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func timeBlock(symbol: String, time: String, label: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(color)
+                Text(time)
+                    .font(.system(size: 30, weight: .bold).monospacedDigit())
+                    .foregroundStyle(Theme.textPrimary)
+                    .fixedSize()
+            }
+            Text(label.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .kerning(1.2)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize()
+        }
+    }
+}
+
+/// Waagerechte Linie für die gestrichelte Verbindung.
+struct Line: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        return path
     }
 }

@@ -6,7 +6,7 @@ name: screenshots
 
 on:
   push:
-    branches: [redesign, deep-dives, whoop-style-details]
+    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget]
   workflow_dispatch:
 
 permissions:
@@ -69,19 +69,15 @@ jobs:
             done
           }
           shoot 0-warmup -screenshotTab home
-          shoot 1-home -screenshotTab home
-          shoot 2-home-myday -screenshotTab home -screenshotSection myday
-          shoot 3-recovery -screenshotPage recovery
-          shoot 4-recovery-more -screenshotPage recovery -screenshotSection drivers
-          shoot 5-strain -screenshotPage strain
-          shoot 6-strain-more -screenshotPage strain -screenshotSection activities
-          shoot 7-sleep -screenshotPage sleep
-          shoot 8-sleep-stages -screenshotPage sleep -screenshotSection stages
-          shoot 9-sleep-metrics -screenshotPage sleep -screenshotSection performance
+          shoot 1-home-myday -screenshotTab home -screenshotSection myday
+          shoot 2-home-bottom -screenshotTab home -screenshotScroll
           ls -la shots
           # Absturzberichte mitnehmen, falls die App nicht startet.
           find ~/Library/Logs/DiagnosticReports -name "Pulse*" -newer build.log -exec cp {} shots/ \; 2>/dev/null || true
           xcrun simctl spawn "$UDID" log show --last 10m --predicate 'process == "Pulse"' --style compact 2>/dev/null | tail -200 > shots/pulse-log.txt || true
+
+      - name: Render widget preview
+        run: Tools/widget-preview/render.sh shots/widget.png || echo "widget preview failed"
 
       - name: Publish to ci-screenshots branch
         env:
