@@ -8,24 +8,38 @@ struct StrainDetailView: View {
     var body: some View {
         DeepDiveScroll {
             VStack(alignment: .leading, spacing: 0) {
+                DetailHeader()
                 if let strain = model.strain(for: model.selectedDayKey) {
-                    hero(strain)
-                        .padding(.top, 8)
+                    BigRing(
+                        value: String(format: "%.1f", strain.strain),
+                        unit: "",
+                        label: "Strain",
+                        fraction: strain.strain / 21,
+                        color: Theme.strainBlue,
+                        marker: targetStrain.map { $0 / 21 }
+                    )
+                    .padding(.top, 14)
 
-                    SectionHeading(text: model.loc("Herzfrequenz-Zonen", "Heart rate zones"))
-                    .id("zones")
-                        .padding(.top, 34)
-                    zonesPanel(strain)
-                        .padding(.top, 14)
+                    ComparisonPanel(items: comparisonItems(strain), footer: footerText)
+                        .padding(.top, 18)
 
-                    SectionHeading(text: model.loc("Aktivitäten", "Activities"))
-                    .id("activities")
+                    InsightCard(text: insightText(strain))
+                        .padding(.top, 22)
+
+                    SectionHeading(text: "Activities")
+                        .id("activities")
                         .padding(.top, 34)
                     activitiesPanel
                         .padding(.top, 14)
 
+                    SectionHeading(text: "Heart rate zones")
+                        .id("zones")
+                        .padding(.top, 34)
+                    zonesPanel(strain)
+                        .padding(.top, 14)
+
                     if let record = model.selectedRecord, !record.hrSamples.isEmpty {
-                        SectionHeading(text: model.loc("Herzfrequenz", "Heart rate"))
+                        SectionHeading(text: "Heart rate")
                             .padding(.top, 34)
                         Panel {
                             HRDayChart(samples: record.hrSamples)
@@ -34,12 +48,12 @@ struct StrainDetailView: View {
                     }
 
                     SectionHeading(text: "Trends")
-                    .id("trends")
+                        .id("trends")
                         .padding(.top, 34)
                     trendPanel
                         .padding(.top, 14)
                 } else {
-                    EmptyDataHint(text: model.loc("Keine Belastungsdaten für diesen Tag.", "No strain data for this day."))
+                    EmptyDataHint(text: "No strain data for this day.")
                         .padding(.top, 60)
                 }
             }
@@ -47,8 +61,76 @@ struct StrainDetailView: View {
             .padding(.bottom, 30)
         }
         .background(ScreenBackground())
-        .navigationTitle("Strain")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var footerText: String {
+        let key = model.selectedDayKey
+        let day = key == DayKey.today() ? "Today" : Fmt.dayShort(key)
+        return "\(day) vs. last 30 days"
+    }
+
+    private static func isStrength(_ workout: Workout) -> Bool {
+        let n = workout.name.lowercased()
+        return ["strength", "weight", "kraft", "gym", "lifting", "functional", "crossfit", "hiit"].contains { n.contains($0) }
+    }
+
+    private func comparisonItems(_ strain: StrainResult) -> [ComparisonItem] {
+        let key = model.selectedDayKey
+        func low(_ s: StrainResult) -> Double { s.zoneMinutes.prefix(3).reduce(0, +) }
+        func high(_ s: StrainResult) -> Double { s.zoneMinutes.dropFirst(3).reduce(0, +) }
+        func strength(_ r: DayRecord) -> Double {
+            r.workouts.filter(Self.isStrength).reduce(0) { $0 + $1.durationMinutes }
+        }
+        let record = model.selectedRecord
+        let lowAvg = model.average30(before: key) { r in model.strain(for: r.date).map(low) }
+        let highAvg = model.average30(before: key) { r in model.strain(for: r.date).map(high) }
+        let strengthAvg = model.average30(before: key) { r in strength(r) }
+        let stepsAvg = model.average30(before: key) { r in r.steps.map(Double.init) }
+        let todayStrength = record.map(strength)
+        let steps = record?.steps.map(Double.init)
+
+        return [
+            ComparisonItem(id: "z13", symbol: "heart", title: "Heart rate zones 1–3",
+                           value: Fmt.hm(low(strain)), average: lowAvg.map { Fmt.hm($0) },
+                           direction: comparisonDirection(low(strain), lowAvg), higherIsBetter: true),
+            ComparisonItem(id: "z45", symbol: "heart.fill", title: "Heart rate zones 4–5",
+                           value: Fmt.hm(high(strain)), average: highAvg.map { Fmt.hm($0) },
+                           direction: comparisonDirection(high(strain), highAvg), higherIsBetter: true),
+            ComparisonItem(id: "strength", symbol: "dumbbell", title: "Strength activity time",
+                           value: Fmt.hm(todayStrength ?? 0), average: strengthAvg.map { Fmt.hm($0) },
+                           direction: comparisonDirection(todayStrength, strengthAvg), higherIsBetter: true),
+            ComparisonItem(id: "steps", symbol: "shoeprints.fill", title: "Steps",
+                           value: steps.map { Int($0).formatted(.number) } ?? "–",
+                           average: stepsAvg.map { Int($0.rounded()).formatted(.number) },
+                           direction: comparisonDirection(steps, stepsAvg), higherIsBetter: true),
+        ]
+    }
+
+    private func insightText(_ strain: StrainResult) -> String {
+        let value = strain.strain
+        var text: String
+        switch value {
+        case ..<10:
+            text = "Strain under 10 is considered light. Your body had an easy day, which helps it recover."
+        case ..<14:
+            text = "Strain between 10 and 13.9 is considered moderate. You kept a steady level of activity."
+        case ..<18:
+            text = "Strain between 14 and 17.9 is considered strenuous. Your cardiovascular system has been working hard."
+        default:
+            text = "Strain of 18 or more is considered all out. Plan for extra sleep and recovery."
+        }
+        if let target = targetStrain {
+            let diff = value - target
+            if diff >= 1 {
+                text += " You\u{2019}re past your target of \(String(format: "%.1f", target)), so prioritise sleep tonight."
+            } else if diff >= -1 {
+                text += " You\u{2019}re right on your target of \(String(format: "%.1f", target))."
+            } else {
+                text += " Your target for the day is \(String(format: "%.1f", target))."
+            }
+        }
+        return text
     }
 
     private var targetStrain: Double? {

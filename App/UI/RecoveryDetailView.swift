@@ -5,57 +5,73 @@ struct RecoveryDetailView: View {
     @Environment(AppModel.self) private var model
     @State private var range = 30
 
+    @State private var showTrends = false
+
     var body: some View {
         DeepDiveScroll {
             VStack(alignment: .leading, spacing: 0) {
+                DetailHeader()
                 if let recovery = model.recovery(for: model.selectedDayKey) {
-                    hero(recovery)
-                        .padding(.top, 8)
+                    BigRing(
+                        value: "\(recovery.score)",
+                        unit: "%",
+                        label: "Recovery",
+                        fraction: Double(recovery.score) / 100,
+                        color: Theme.recoveryColor(zone: recovery.zone)
+                    )
+                    .padding(.top, 14)
 
-                    SectionHeading(text: model.loc("Was zählt", "What drove it"))
-                    .id("drivers")
+                    ComparisonPanel(items: comparisonItems, footer: footerText)
+                        .padding(.top, 18)
+
+                    InsightCard(
+                        text: insightText(recovery),
+                        linkTitle: "Explore your trends",
+                        action: { showTrends = true }
+                    )
+                    .padding(.top, 22)
+
+                    if recovery.calibrating {
+                        PillBadge(text: "Baseline still calibrating", color: Theme.yellow)
+                            .padding(.top, 14)
+                    }
+
+                    SectionHeading(text: "What drove it")
+                        .id("drivers")
                         .padding(.top, 34)
                     contributorsPanel(recovery)
                         .padding(.top, 14)
 
-                    SectionHeading(text: model.loc("Vitalwerte", "Vitals"))
-                    .id("vitals")
-                        .padding(.top, 34)
-                    vitalsPanel
-                        .padding(.top, 14)
-
                     SectionHeading(text: "Trends")
-                    .id("trends")
+                        .id("trends")
                         .padding(.top, 34)
                     trendPanel
                         .padding(.top, 14)
 
                     SectionHeading(text: "HRV")
-                    .id("hrv")
+                        .id("hrv")
                         .padding(.top, 34)
                     baselinePanel(
                         points: trendPoints(model.trend(range) { $0.hrvRmssd }),
                         baseline: recovery.hrvBaseline,
                         isLog: true,
                         color: Theme.accent,
-                        note: model.loc("Band = deine Baseline. Über dem Band ist gut, darunter deutet auf Belastung hin.",
-                                        "Band = your baseline. Above the band is good, below points to stress or fatigue.")
+                        note: "Band = your baseline. Above the band is good, below points to stress or fatigue."
                     )
                     .padding(.top, 14)
 
-                    SectionHeading(text: model.loc("Ruhepuls", "Resting heart rate"))
+                    SectionHeading(text: "Resting heart rate")
                         .padding(.top, 34)
                     baselinePanel(
                         points: trendPoints(model.trend(range) { $0.restingHR }),
                         baseline: recovery.rhrBaseline,
                         isLog: false,
                         color: Theme.red,
-                        note: model.loc("Ein Ruhepuls über deinem Band ist ein frühes Zeichen für Stress, Krankheit oder zu wenig Erholung.",
-                                        "A resting heart rate above your band is an early sign of stress, illness or too little recovery.")
+                        note: "A resting heart rate above your band is an early sign of stress, illness or too little recovery."
                     )
                     .padding(.top, 14)
                 } else {
-                    EmptyDataHint(text: model.loc("Keine Recovery-Daten für diesen Tag.", "No recovery data for this day."))
+                    EmptyDataHint(text: "No recovery data for this day.")
                         .padding(.top, 60)
                 }
             }
@@ -63,79 +79,76 @@ struct RecoveryDetailView: View {
             .padding(.bottom, 30)
         }
         .background(ScreenBackground())
-        .navigationTitle("Recovery")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(isPresented: $showTrends) {
+            TrendsView(embedded: true)
+        }
     }
 
-    // MARK: - Kopf
+    private var footerText: String {
+        let key = model.selectedDayKey
+        let day = key == DayKey.today() ? "Today" : Fmt.dayShort(key)
+        return "\(day) vs. last 30 days"
+    }
 
-    private func hero(_ recovery: RecoveryResult) -> some View {
-        let color = Theme.recoveryColor(zone: recovery.zone)
-        let target = StrainEngine.targetStrain(forRecovery: recovery.score)
+    // MARK: - Vergleich mit 30 Tagen
 
-        return VStack(spacing: 22) {
-            DeepDiveHero(
-                value: "\(recovery.score)",
-                unit: "%",
-                caption: "Recovery",
-                fraction: Double(recovery.score) / 100,
-                color: color
-            )
+    private var comparisonItems: [ComparisonItem] {
+        let key = model.selectedDayKey
+        let record = model.selectedRecord
+        let sleep = model.sleep(for: key)
+        let perf: Double? = (sleep?.hasData == true) ? sleep?.performance : nil
+        let hrvAvg = model.average30(before: key) { $0.hrvRmssd }
+        let rhrAvg = model.average30(before: key) { $0.restingHR }
+        let respAvg = model.average30(before: key) { $0.respiratoryRate }
+        let perfAvg = model.average30(before: key) { r in
+            model.sleep(for: r.date).flatMap { $0.hasData ? $0.performance : nil }
+        }
 
-            if recovery.calibrating {
-                PillBadge(text: model.loc("Baseline kalibriert noch", "Baseline still calibrating"), color: Theme.yellow)
+        return [
+            ComparisonItem(id: "hrv", symbol: "waveform.path.ecg", title: "Heart rate variability",
+                           value: record?.hrvRmssd.map { "\(Int($0.rounded()))" } ?? "–",
+                           average: hrvAvg.map { "\(Int($0.rounded()))" },
+                           direction: comparisonDirection(record?.hrvRmssd, hrvAvg), higherIsBetter: true),
+            ComparisonItem(id: "rhr", symbol: "heart", title: "Resting heart rate",
+                           value: record?.restingHR.map { "\(Int($0.rounded()))" } ?? "–",
+                           average: rhrAvg.map { "\(Int($0.rounded()))" },
+                           direction: comparisonDirection(record?.restingHR, rhrAvg), higherIsBetter: false),
+            ComparisonItem(id: "resp", symbol: "lungs", title: "Respiratory rate",
+                           value: record?.respiratoryRate.map { String(format: "%.1f", $0) } ?? "–",
+                           average: respAvg.map { String(format: "%.1f", $0) },
+                           direction: comparisonDirection(record?.respiratoryRate, respAvg), higherIsBetter: false),
+            ComparisonItem(id: "sleep", symbol: "moon", title: "Sleep performance",
+                           value: perf.map { "\(Int($0.rounded()))%" } ?? "–",
+                           average: perfAvg.map { "\(Int($0.rounded()))%" },
+                           direction: comparisonDirection(perf, perfAvg), higherIsBetter: true),
+        ]
+    }
+
+    private func insightText(_ recovery: RecoveryResult) -> String {
+        let key = model.selectedDayKey
+        let zone: String
+        switch recovery.zone {
+        case .green: zone = "green"
+        case .yellow: zone = "yellow"
+        case .red: zone = "red"
+        }
+        let advice: String
+        switch recovery.zone {
+        case .green: advice = "Your body is ready to take on strain today."
+        case .yellow: advice = "If you can, spend extra time on recovery today, like hydrating and eating well."
+        case .red: advice = "Keep strain low today and make time for rest and an early night."
+        }
+
+        if let hrv = model.selectedRecord?.hrvRmssd, let avg = model.average30(before: key, { $0.hrvRmssd }), avg > 0 {
+            let pct = Int(((hrv - avg) / avg * 100).rounded())
+            if abs(pct) >= 3 {
+                let dir = pct > 0 ? "above" : "below"
+                return "Your HRV is \(abs(pct))% \(dir) its usual range, resulting in a \(zone) Recovery. \(advice)"
             }
-
-            HStack(spacing: 12) {
-                StatTile(
-                    label: model.loc("Zone", "Zone"),
-                    value: zoneName(recovery.zone),
-                    sub: zoneRange(recovery.zone),
-                    subColor: color
-                )
-                StatTile(
-                    label: model.loc("Strain-Ziel", "Strain target"),
-                    value: String(format: "%.1f", target),
-                    sub: model.loc("für heute", "for today")
-                )
-            }
-
-            Text(zoneText(recovery.zone))
-                .font(.system(size: 17))
-                .foregroundStyle(Theme.textPrimary.opacity(0.8))
-                .lineSpacing(3)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            return "Your HRV is right in its usual range, resulting in a \(zone) Recovery. \(advice)"
         }
-    }
-
-    private func zoneName(_ zone: RecoveryZone) -> String {
-        switch zone {
-        case .green: return model.loc("Grün", "Green")
-        case .yellow: return model.loc("Gelb", "Yellow")
-        case .red: return model.loc("Rot", "Red")
-        }
-    }
-
-    private func zoneRange(_ zone: RecoveryZone) -> String {
-        switch zone {
-        case .green: return "67–99 %"
-        case .yellow: return "34–66 %"
-        case .red: return "1–33 %"
-        }
-    }
-
-    private func zoneText(_ zone: RecoveryZone) -> String {
-        switch zone {
-        case .green:
-            return model.loc("Dein Körper ist gut erholt. Ein guter Tag für hartes Training oder einen Wettkampf.",
-                             "Your body is well recovered. A good day for hard training or competing.")
-        case .yellow:
-            return model.loc("Du bist teilweise erholt. Moderates Training passt, hör auf deinen Körper.",
-                             "You\u{2019}re partly recovered. Moderate training works, listen to your body.")
-        case .red:
-            return model.loc("Dein Körper braucht Ruhe. Leichte Bewegung und früher Schlaf helfen am meisten.",
-                             "Your body needs rest. Light movement and an early night help most.")
-        }
+        return "You have a \(zone) Recovery. \(advice)"
     }
 
     // MARK: - Einflussfaktoren
