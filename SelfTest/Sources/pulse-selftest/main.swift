@@ -369,6 +369,24 @@ check(abs(AgeNorms.fitnessAge(vo2max: 30.9, sex: .female) - 45) < 1.0, "VO₂max
 check(AgeNorms.fitnessAge(vo2max: 55, sex: .male) < AgeNorms.fitnessAge(vo2max: 35, sex: .male), "Höherer VO₂max ⇒ jüngeres Fitness-Alter")
 let fitVeryHigh = AgeNorms.fitnessAge(vo2max: 65, sex: .male)
 check(fitVeryHigh >= 20 && fitVeryHigh <= 25, "Sehr hoher VO₂max wird auf ≥20 geklemmt (\(String(format: "%.0f", fitVeryHigh)))")
+// Schritte aus dailyRollUp (countSum kommt als String).
+let stepsRollup: [String: Any] = [
+    "rollupDataPoints": [
+        [
+            "civilStartTime": ["date": ["year": 2026, "month": 11, "day": 17], "time": ["hours": 0]],
+            "civilEndTime": ["date": ["year": 2026, "month": 11, "day": 18], "time": ["hours": 0]],
+            "steps": ["countSum": "8123"],
+        ],
+        [
+            "civilStartTime": ["date": ["year": 2026, "month": 11, "day": 18], "time": ["hours": 0]],
+            "civilEndTime": ["date": ["year": 2026, "month": 11, "day": 19], "time": ["hours": 0]],
+            "steps": ["countSum": "4200"],
+        ],
+    ],
+]
+let parsedSteps = HealthAPIClient.parseDailyRollup(stepsRollup, valueKeys: SyncEngine.stepsRollupKeys)
+check(parsedSteps["2026-11-17"] == 8123 && parsedSteps["2026-11-18"] == 4200, "Schritte-Rollup: Tagessummen werden gelesen")
+
 // Google-Health-HRV-Felder (v4): Samples und Tageswerte.
 let hrvSample: [String: Any] = [
     "rootMeanSquareOfSuccessiveDifferencesMilliseconds": 62.5,

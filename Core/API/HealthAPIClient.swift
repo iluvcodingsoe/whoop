@@ -264,6 +264,70 @@ public final class HealthAPIClient: @unchecked Sendable {
         return result
     }
 
+    /// Tageswerte über `dataPoints:dailyRollUp`. Google gleicht dabei doppelte Quellen
+    /// ab (z. B. Telefon und Armband zählen dieselben Schritte), anders als die Summe
+    /// der Einzelintervalle. Liefert "yyyy-MM-dd" → Wert.
+    public func fetchDailyRollup(
+        type: String,
+        valueKeys: [String],
+        start: Date,
+        end: Date,
+        dataSourceFamily: String? = nil
+    ) async throws -> [String: Double] {
+        let calendar = Calendar.current
+        var result: [String: Double] = [:]
+        var chunkStart = calendar.startOfDay(for: start)
+        let finalEnd = calendar.startOfDay(for: end.addingTimeInterval(86400))
+        while chunkStart < finalEnd {
+            let chunkEnd = min(calendar.date(byAdding: .day, value: 30, to: chunkStart) ?? finalEnd, finalEnd)
+            var pageToken: String?
+            repeat {
+                var body: [String: Any] = [
+                    "range": [
+                        "start": Self.civilDateTime(chunkStart),
+                        "end": Self.civilDateTime(chunkEnd),
+                    ],
+                    "windowSizeDays": 1,
+                ]
+                if let dataSourceFamily { body["dataSourceFamily"] = dataSourceFamily }
+                if let pageToken { body["pageToken"] = pageToken }
+                let json = try await getJSON(path: "/users/me/dataTypes/\(type)/dataPoints:dailyRollUp", query: [], body: body)
+                result.merge(Self.parseDailyRollup(json, valueKeys: valueKeys)) { _, new in new }
+                pageToken = json["nextPageToken"] as? String
+                if pageToken?.isEmpty == true { pageToken = nil }
+            } while pageToken != nil
+            chunkStart = chunkEnd
+        }
+        return result
+    }
+
+    /// Google CivilDateTime ({date: {year, month, day}, time: {hours, …}}) in lokaler Zeit.
+    static func civilDateTime(_ date: Date) -> [String: Any] {
+        let c = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        return [
+            "date": ["year": c.year ?? 1970, "month": c.month ?? 1, "day": c.day ?? 1],
+            "time": ["hours": c.hour ?? 0, "minutes": c.minute ?? 0, "seconds": 0, "nanos": 0],
+        ]
+    }
+
+    /// Antwort von `dailyRollUp` → "yyyy-MM-dd" → Wert.
+    public static func parseDailyRollup(_ json: [String: Any], valueKeys: [String]) -> [String: Double] {
+        let points = (json["rollupDataPoints"] as? [[String: Any]]) ?? []
+        var result: [String: Double] = [:]
+        for point in points {
+            guard let startTime = point["civilStartTime"] as? [String: Any],
+                  let key = JSONExtract.civilDateString(from: startTime["date"]) else { continue }
+            var payload: Any = point
+            for (name, value) in point where name != "civilStartTime" && name != "civilEndTime" {
+                if value is [String: Any] { payload = value; break }
+            }
+            if let value = JSONExtract.firstDouble(in: payload, keys: valueKeys) {
+                result[key] = value
+            }
+        }
+        return result
+    }
+
     /// Schlaf-Sessions inkl. Phasen.
     public func fetchSleepSessions(start: Date, end: Date) async throws -> [SleepSession] {
         let points = try await fetchRawDataPoints(
@@ -371,7 +435,7 @@ public final class HealthAPIClient: @unchecked Sendable {
 
     // MARK: - HTTP
 
-    private func getJSON(path: String, query: [URLQueryItem]) async throws -> [String: Any] {
+    private func getJSON(path: String, query: [URLQueryItem], body: [String: Any]? = nil) async throws -> [String: Any] {
         guard var components = URLComponents(url: Self.baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
             throw APIError.badResponse("Invalid path")
         }
@@ -390,9 +454,13 @@ public final class HealthAPIClient: @unchecked Sendable {
             await throttle()
             let token = try await auth.validAccessToken(config: config)
             var request = URLRequest(url: url)
-            request.httpMethod = "GET"
+            request.httpMethod = body == nil ? "GET" : "POST"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Accept")
+            if let body {
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+            }
 
             let data: Data
             let response: URLResponse

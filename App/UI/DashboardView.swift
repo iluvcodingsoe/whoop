@@ -351,7 +351,7 @@ struct HomeView: View {
                     MetricRow(
                         symbol: "shoeprints.fill",
                         title: model.loc("Schritte", "Steps"),
-                        subtitle: model.loc("Ziel 8.000", "Goal 8,000"),
+                        subtitle: "Goal \(model.stepGoal.formatted(.number))" + (record?.steps.map { $0 >= model.stepGoal ? " · reached" : " · \(max(0, model.stepGoal - $0).formatted(.number)) to go" } ?? ""),
                         value: record?.steps.map { $0.formatted(.number.grouping(.automatic)) } ?? "–",
                         unit: ""
                     )
@@ -780,17 +780,35 @@ struct ActivitiesCard: View {
 
 // MARK: - Schlafplan für heute Nacht (My Day)
 
-/// Empfohlene Bettzeit und Aufstehzeit für heute Nacht.
+/// Wie lange man im Schnitt zum Einschlafen braucht (Minuten).
+let fallAsleepMinutes = 15.0
+
+extension AppModel {
+    /// Bettzeit für heute Nacht: selbst gewählt oder empfohlen.
+    var tonightBedtimeMinutes: Double? {
+        plannedBedtimeMinutes.map(Double.init) ?? bedtimeTonight?.recommendedBedtimeMinutes
+    }
+
+    /// Geschätzte Aufwachzeit: Bettzeit + Einschlafzeit + Schlafbedarf.
+    func estimatedWakeMinutes(forBedtime bed: Double) -> Double? {
+        guard let need = bedtimeTonight?.projectedNeedMinutes else { return nil }
+        return bed + fallAsleepMinutes + need
+    }
+}
+
+/// Bettzeit und geschätzte Aufwachzeit für heute Nacht; die Bettzeit lässt sich festlegen.
 struct TonightSleepCard: View {
     @Environment(AppModel.self) private var model
+    @State private var editing = false
 
     var body: some View {
         let plan = model.bedtimeTonight
+        let custom = model.plannedBedtimeMinutes != nil
 
-        NavigationLink {
-            SleepDetailView()
-        } label: {
-            VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 18) {
+            NavigationLink {
+                SleepDetailView()
+            } label: {
                 HStack {
                     CapsLabel(text: "Tonight\u{2019}s sleep", size: 13)
                     Spacer()
@@ -798,41 +816,71 @@ struct TonightSleepCard: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.textSecondary)
                 }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
-                if let plan, let bed = plan.recommendedBedtimeMinutes {
-                    HStack(alignment: .center, spacing: 0) {
-                        timeBlock(symbol: "sunset", time: Fmt.clockFromMinutes(bed), label: "Recommended\nbedtime", color: Theme.sleepPurple)
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: 1)
-                            .overlay(
-                                Line()
-                                    .stroke(Theme.textSecondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.horizontal, 10)
-                            .padding(.bottom, 26)
-                        timeBlock(symbol: "alarm", time: plan.habitualWakeMinutes.map { Fmt.clockFromMinutes($0) } ?? "–", label: "Wake-up\ntime", color: Theme.yellow)
-                    }
+            if let plan, let bed = model.tonightBedtimeMinutes {
+                let wake = model.estimatedWakeMinutes(forBedtime: bed)
+                HStack(alignment: .center, spacing: 0) {
+                    timeBlock(symbol: "sunset", time: Fmt.clockFromMinutes(bed),
+                              label: custom ? "Your\nbedtime" : "Recommended\nbedtime", color: Theme.sleepPurple)
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 1)
+                        .overlay(
+                            Line()
+                                .stroke(Theme.textSecondary.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 26)
+                    timeBlock(symbol: "alarm", time: wake.map { Fmt.clockFromMinutes($0) } ?? "–",
+                              label: "Estimated\nwake-up", color: Theme.yellow)
+                }
 
-                    HStack(spacing: 8) {
-                        Image(systemName: "bed.double")
-                            .font(.system(size: 13))
-                        Text("Sleep need \(Fmt.hm(plan.projectedNeedMinutes)) h" + (plan.debtMinutes > 15 ? " · includes \(Fmt.hm(plan.debtMinutes)) h of sleep debt" : ""))
-                            .font(.system(size: 14))
-                    }
-                    .foregroundStyle(Theme.textSecondary)
-                } else {
-                    Text("Wear your band for a few nights to get a bedtime recommendation.")
-                        .font(.system(size: 15))
+                HStack(spacing: 8) {
+                    Image(systemName: "bed.double")
+                        .font(.system(size: 13))
+                    Text("Sleep need \(Fmt.hm(plan.projectedNeedMinutes)) h" + (plan.debtMinutes > 15 ? " · includes \(Fmt.hm(plan.debtMinutes)) h of sleep debt" : ""))
+                        .font(.system(size: 14))
+                }
+                .foregroundStyle(Theme.textSecondary)
+
+                if custom, let rec = plan.recommendedBedtimeMinutes {
+                    Text("Recommended bedtime: \(Fmt.clockFromMinutes(rec))")
+                        .font(.system(size: 14))
                         .foregroundStyle(Theme.textSecondary)
                 }
+            } else {
+                Text("Wear your band for a few nights to get a sleep plan. You can still set your bedtime now.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.textSecondary)
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
+
+            Button {
+                editing = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock")
+                    Text(custom ? "Change bedtime" : "Set my bedtime")
+                        .kerning(1)
+                        .textCase(.uppercase)
+                }
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.08)))
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
+        .sheet(isPresented: $editing) {
+            BedtimeSheet()
+        }
     }
 
     private func timeBlock(symbol: String, time: String, label: String, color: Color) -> some View {
@@ -852,6 +900,108 @@ struct TonightSleepCard: View {
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize()
+        }
+    }
+}
+
+/// Bettzeit wählen; zeigt live die geschätzte Aufwachzeit.
+struct BedtimeSheet: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var time = Date()
+
+    var body: some View {
+        let minutes = Double(Calendar.current.component(.hour, from: time) * 60 + Calendar.current.component(.minute, from: time))
+        let wake = model.estimatedWakeMinutes(forBedtime: minutes)
+
+        NavigationStack {
+            VStack(spacing: 20) {
+                DatePicker("Bedtime", selection: $time, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+
+                HStack(spacing: 30) {
+                    VStack(spacing: 4) {
+                        CapsLabel(text: "Estimated wake-up", color: Theme.textSecondary, size: 11)
+                        Text(wake.map { Fmt.clockFromMinutes($0) } ?? "–")
+                            .font(.system(size: 30, weight: .bold).monospacedDigit())
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    if let need = model.bedtimeTonight?.projectedNeedMinutes {
+                        VStack(spacing: 4) {
+                            CapsLabel(text: "Sleep need", color: Theme.textSecondary, size: 11)
+                            Text("\(Fmt.hm(need)) h")
+                                .font(.system(size: 30, weight: .bold).monospacedDigit())
+                                .foregroundStyle(Theme.textPrimary)
+                        }
+                    }
+                }
+
+                Text("Wake-up time = bedtime + about \(Int(fallAsleepMinutes)) min to fall asleep + your sleep need for tonight.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    model.plannedBedtimeMinutes = Int(minutes)
+                    dismiss()
+                } label: {
+                    Text("Save bedtime")
+                        .font(.system(size: 17, weight: .bold))
+                        .kerning(1.2)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(Capsule().fill(Color.white))
+                }
+                .buttonStyle(.plain)
+
+                if model.plannedBedtimeMinutes != nil {
+                    Button("Use recommended bedtime instead") {
+                        model.plannedBedtimeMinutes = nil
+                        dismiss()
+                    }
+                    .font(.system(size: 15))
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(20)
+            .background(Theme.bg.ignoresSafeArea())
+            .navigationTitle("Your bedtime")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .preferredColorScheme(.dark)
+        .onAppear {
+            let start = model.tonightBedtimeMinutes ?? 22 * 60 + 30
+            let m = (Int(start.rounded()) % 1440 + 1440) % 1440
+            time = Calendar.current.date(bySettingHour: m / 60, minute: m % 60, second: 0, of: Date()) ?? Date()
+        }
+    }
+}
+
+/// Zeile in „Mehr“: aktuelle Bettzeit, tippen zum Ändern.
+struct BedtimePlanRow: View {
+    @Environment(AppModel.self) private var model
+    @State private var editing = false
+
+    var body: some View {
+        Button {
+            editing = true
+        } label: {
+            LabeledContent("Bedtime") {
+                Text(model.plannedBedtimeMinutes.map { Fmt.clockFromMinutes(Double($0)) } ?? "Recommended")
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .sheet(isPresented: $editing) {
+            BedtimeSheet()
         }
     }
 }
