@@ -31,15 +31,6 @@ private var widgetIsGerman: Bool { false }
 
 // MARK: - Daten
 
-struct PulseEntry: TimelineEntry {
-    let date: Date
-    let score: Int?
-    let zone: String
-    let sleepPerformance: Double?
-    let strain: Double?
-    let strainTarget: Double?
-}
-
 struct PulseProvider: TimelineProvider {
     func placeholder(in context: Context) -> PulseEntry {
         PulseEntry(date: Date(), score: 72, zone: "green", sleepPerformance: 88, strain: 9.5, strainTarget: 14.4)
@@ -219,11 +210,23 @@ struct PulseOverviewWidget: Widget {
     }
 }
 
+struct PulseScoresWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PulseScores", provider: PulseProvider()) { entry in
+            ScoresWidgetView(entry: entry)
+        }
+        .configurationDisplayName("Recovery, Strain & Sleep")
+        .description("Today\u{2019}s recovery, strain and sleep side by side.")
+        .supportedFamilies([.systemMedium])
+    }
+}
+
 // MARK: - Bundle
 
 @main
 struct PulseWidgets: WidgetBundle {
     var body: some Widget {
+        PulseScoresWidget()
         PulseRecoveryWidget()
         PulseOverviewWidget()
     }

@@ -29,6 +29,8 @@
 		67D32E84ACA4B05AC113C3EF /* MetricsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 895376FBBDD366114CEE92ED /* MetricsStore.swift */; };
 		7A661333AFE517CFACF23E33 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E05EF3D7412CEB8BA8BE5C0 /* SettingsView.swift */; };
 		80E4FC20B1EE981660151DBA /* PulseWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4E7A7781EC8B1FA863F151 /* PulseWidget.swift */; };
+		941B6FD82ACD073FC762DF76 /* ScoresWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A473B62560031551A6364EF /* ScoresWidgetView.swift */; };
+		AE8589F94901F9550997B0AF /* ScoresWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A473B62560031551A6364EF /* ScoresWidgetView.swift */; };
 		810961A1DA08A38121AE77B8 /* WebAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E887EC643DBA11B85A6BA0 /* WebAuthenticator.swift */; };
 		899E899CA9FAA76276ECF727 /* SyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E69451E7721F715968D044D7 /* SyncEngine.swift */; };
 		8B51D72E85E4E170757ED6D0 /* SleepDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB2F0E6CE69786B6EEB85A9 /* SleepDetailView.swift */; };
@@ -82,6 +84,7 @@
 /* Begin PBXFileReference section */
 		09EC24598F0BAC1D376F5AD8 /* RecoveryEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEngine.swift; sourceTree = "<group>"; };
 		0A4E7A7781EC8B1FA863F151 /* PulseWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseWidget.swift; sourceTree = "<group>"; };
+		4A473B62560031551A6364EF /* ScoresWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoresWidgetView.swift; sourceTree = "<group>"; };
 		0A6F5E05E78D170994CD2FE5 /* PulseWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PulseWidget.entitlements; sourceTree = "<group>"; };
 		0CB2F0E6CE69786B6EEB85A9 /* SleepDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepDetailView.swift; sourceTree = "<group>"; };
 		0F84C18DF46A68242E67E143 /* ChartViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViews.swift; sourceTree = "<group>"; };
@@ -160,6 +163,7 @@
 				7815A8398AD4E34260EBFDBF /* Info.plist */,
 				0A6F5E05E78D170994CD2FE5 /* PulseWidget.entitlements */,
 				0A4E7A7781EC8B1FA863F151 /* PulseWidget.swift */,
+				4A473B62560031551A6364EF /* ScoresWidgetView.swift */,
 			);
 			path = PulseWidget;
 			sourceTree = "<group>";
@@ -373,6 +377,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				80E4FC20B1EE981660151DBA /* PulseWidget.swift in Sources */,
+				941B6FD82ACD073FC762DF76 /* ScoresWidgetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,6 +428,7 @@
 				F1ABF7BAB79C5AD2D86B9B9E /* TrendsView.swift in Sources */,
 				810961A1DA08A38121AE77B8 /* WebAuthenticator.swift in Sources */,
 				FA60A10A4C2B40A0FFA169F1 /* WidgetBridge.swift in Sources */,
+				AE8589F94901F9550997B0AF /* ScoresWidgetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

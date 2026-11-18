@@ -30,6 +30,7 @@ targets:
           - group.net.dehlwes.pulse
     sources:
       - path: App
+      - path: PulseWidget/ScoresWidgetView.swift
       - path: Core
         excludes:
           - Package.swift
