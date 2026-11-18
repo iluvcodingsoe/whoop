@@ -739,7 +739,7 @@ struct ActivitiesCard: View {
     }
 
     private func row(pillColor: Color, symbol: String, pillText: String, name: String, start: Date, end: Date, showDay: Bool) -> some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: symbol)
                     .font(.system(size: 17, weight: .semibold))
@@ -747,15 +747,15 @@ struct ActivitiesCard: View {
                     .font(.system(size: 19, weight: .bold).monospacedDigit())
             }
             .foregroundStyle(Color.white)
-            .frame(width: 104, height: 46)
+            .frame(width: 96, height: 46)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(pillColor))
 
             Text(name.uppercased())
-                .font(.system(size: 15, weight: .bold))
-                .kerning(1.4)
+                .font(.system(size: 14, weight: .bold))
+                .kerning(1)
                 .foregroundStyle(Theme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
 
             Spacer(minLength: 4)
 

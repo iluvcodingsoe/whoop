@@ -68,6 +68,7 @@ jobs:
               sleep 10
             done
           }
+          shoot 0-warmup -screenshotTab home
           shoot 1-home -screenshotTab home
           shoot 2-home-myday -screenshotTab home -screenshotSection myday
           shoot 3-recovery -screenshotPage recovery

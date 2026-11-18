@@ -127,7 +127,7 @@ struct SleepDetailView: View {
             model.sleep(for: r.date).flatMap { $0.hasData ? $0.restorativeMinutes : nil }
         }
 
-        return HStack(alignment: .top, spacing: 28) {
+        return HStack(alignment: .top, spacing: 18) {
             bigNumber(Fmt.hm(sleep.sleptMinutes), color: Theme.sleepPurple, average: sleptAvg, current: sleep.sleptMinutes, label: "Hours of sleep")
             bigNumber(Fmt.hm(sleep.restorativeMinutes), color: Theme.textPrimary, average: restAvg, current: sleep.restorativeMinutes, label: "Restorative sleep")
             Spacer(minLength: 0)
@@ -138,15 +138,18 @@ struct SleepDetailView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .center, spacing: 8) {
                 Text(value)
-                    .font(.system(size: 46, weight: .bold).monospacedDigit())
+                    .font(.system(size: 42, weight: .bold).monospacedDigit())
                     .foregroundStyle(color)
+                    .lineLimit(1)
+                    .fixedSize()
                 if let average {
                     HStack(spacing: 3) {
                         Image(systemName: current >= average ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
                             .font(.system(size: 8))
                         Text(Fmt.hm(average))
-                            .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                            .font(.system(size: 12, weight: .semibold).monospacedDigit())
                     }
+                    .fixedSize()
                     .foregroundStyle(Theme.textPrimary.opacity(0.75))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 4)
@@ -254,6 +257,7 @@ struct SleepDetailView: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                 }
                 .chartXScale(domain: from...to)
+                .chartYScale(domain: max(0, (samples.map(\.bpm).min() ?? 40) - 8)...((samples.map(\.bpm).max() ?? 100) + 8))
                 .chartXAxis(.hidden)
                 .chartYAxis {
                     AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
