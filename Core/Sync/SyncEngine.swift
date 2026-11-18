@@ -283,27 +283,42 @@ public final class SyncEngine: @unchecked Sendable {
             note("VO₂max", "\(Self.describe(error)) – estimating from heart rate instead", error: true)
         }
 
-        // 8. Schritte (Intervall-Samples → Tagessumme)
+        // 8. Schritte: Google-Tagesrollup (gleicht doppelte Quellen wie Telefon +
+        // Armband ab). Fallback: Summe der Intervalle nur von Wearables.
         report("Loading steps…")
         do {
-            let samples = try await client.fetchSamples(
+            let daily = try await client.fetchDailyRollup(
                 type: "steps",
-                payloadKey: "steps",
-                valueKeys: ["count", "steps", "value"],
+                valueKeys: Self.stepsRollupKeys,
                 start: windowStart,
-                end: windowEnd,
-                filterField: "interval.start_time"
+                end: windowEnd
             )
-            var byDay: [String: Double] = [:]
-            for sample in samples {
-                byDay[DayKey.string(from: sample.time), default: 0] += sample.value
+            guard !daily.isEmpty else { throw APIError.badResponse("empty rollup") }
+            for (key, total) in daily {
+                update(key) { $0.steps = Int(total.rounded()) }
             }
-            for (key, total) in byDay {
-                update(key) { $0.steps = Int(total) }
-            }
-            note("Steps", "\(byDay.count) days")
+            note("Steps", "\(daily.count) days (daily total)")
         } catch {
-            note("Steps", Self.describe(error), error: true)
+            do {
+                let samples = try await client.fetchSamples(
+                    type: "steps",
+                    payloadKey: "steps",
+                    valueKeys: ["count", "steps", "value"],
+                    start: windowStart,
+                    end: windowEnd,
+                    filterField: "interval.start_time"
+                )
+                var byDay: [String: Double] = [:]
+                for sample in samples {
+                    byDay[DayKey.string(from: sample.time), default: 0] += sample.value
+                }
+                for (key, total) in byDay {
+                    update(key) { $0.steps = Int(total) }
+                }
+                note("Steps", "\(byDay.count) days (summed; daily total failed: \(Self.describe(error)))", error: true)
+            } catch {
+                note("Steps", Self.describe(error), error: true)
+            }
         }
 
         // 9. Workouts
@@ -509,6 +524,9 @@ public final class SyncEngine: @unchecked Sendable {
         "rootMeanSquareOfSuccessiveDifferencesMilliseconds",
         "rmssd", "rmssdMilliseconds", "milliseconds", "dailyRmssd", "value",
     ]
+    /// Feldnamen der Schritt-Summe im `dailyRollUp` (StepsRollupValue).
+    public static let stepsRollupKeys = ["countSum", "count", "stepsSum", "sum", "value"]
+
     public static let hrvDailyKeys = [
         "averageHeartRateVariabilityMilliseconds",
         "deepSleepRootMeanSquareOfSuccessiveDifferencesMilliseconds",

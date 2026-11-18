@@ -14,6 +14,7 @@ struct SettingsView: View {
                 syncSection
                 notificationsSection
                 ProfileFields(model: model)
+                goalsSection(model: $model)
                 calculationSection(model: $model)
                 demoSection
                 dataSection
@@ -129,6 +130,19 @@ struct SettingsView: View {
     }
 
     // MARK: - Berechnung
+
+    private func goalsSection(model: Bindable<AppModel>) -> some View {
+        Section {
+            Stepper(value: model.stepGoal, in: 1000...40000, step: 500) {
+                LabeledContent("Daily step goal", value: model.wrappedValue.stepGoal.formatted(.number))
+            }
+            BedtimePlanRow()
+        } header: {
+            Text("Goals")
+        } footer: {
+            Text("Your bedtime sets the wake-up time shown in Tonight\u{2019}s sleep on Home.")
+        }
+    }
 
     private func calculationSection(model: Bindable<AppModel>) -> some View {
         Section {

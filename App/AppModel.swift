@@ -21,6 +21,8 @@ final class AppModel {
         static let age = "calc.age"
         static let sex = "calc.sex"
         static let heightCm = "profile.heightCm"
+        static let stepGoal = "goal.steps"
+        static let plannedBedtime = "plan.bedtimeMinutes"
         static let weightKg = "profile.weightKg"
         static let maxHR = "calc.maxHROverride"
         static let lastSync = "sync.lastSyncAt"
@@ -85,6 +87,20 @@ final class AppModel {
     /// Körpergröße in cm (Profil; fließt aktuell in keine Score-Berechnung ein).
     var heightCm: Double {
         didSet { defaults.set(heightCm, forKey: Keys.heightCm) }
+    }
+    /// Tägliches Schrittziel.
+    var stepGoal: Int {
+        didSet { defaults.set(stepGoal, forKey: Keys.stepGoal) }
+    }
+    /// Selbst gewählte Bettzeit (Minuten nach Mitternacht), nil = Empfehlung nutzen.
+    var plannedBedtimeMinutes: Int? {
+        didSet {
+            if let plannedBedtimeMinutes {
+                defaults.set(plannedBedtimeMinutes, forKey: Keys.plannedBedtime)
+            } else {
+                defaults.removeObject(forKey: Keys.plannedBedtime)
+            }
+        }
     }
     /// Gewicht in kg (Profil; VO₂max ist bereits pro kg normalisiert).
     var weightKg: Double {
@@ -207,6 +223,8 @@ final class AppModel {
         age = (defaults.object(forKey: Keys.age) as? Int) ?? 30
         sex = (defaults.string(forKey: Keys.sex)).flatMap(BiologicalSex.init(rawValue:)) ?? .unspecified
         heightCm = (defaults.object(forKey: Keys.heightCm) as? Double) ?? 175
+        stepGoal = (defaults.object(forKey: Keys.stepGoal) as? Int) ?? 8000
+        plannedBedtimeMinutes = defaults.object(forKey: Keys.plannedBedtime) as? Int
         weightKg = (defaults.object(forKey: Keys.weightKg) as? Double) ?? 75
         maxHROverride = (defaults.object(forKey: Keys.maxHR) as? Double) ?? 0
         lastSyncAt = (defaults.object(forKey: Keys.lastSync) as? Double).map(Date.init(timeIntervalSince1970:))
