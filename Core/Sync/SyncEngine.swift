@@ -145,7 +145,7 @@ public final class SyncEngine: @unchecked Sendable {
             let result = try await client.fetchSamplesDetailed(
                 type: "heart-rate-variability",
                 payloadKey: "heartRateVariability",
-                valueKeys: ["rmssd", "rmssdMilliseconds", "milliseconds", "dailyRmssd", "value"],
+                valueKeys: Self.hrvSampleKeys,
                 start: windowStart.addingTimeInterval(-12 * 3600),
                 end: windowEnd
             )
@@ -164,7 +164,7 @@ public final class SyncEngine: @unchecked Sendable {
                     let daily = try await client.fetchDailyValues(
                         type: "daily-heart-rate-variability",
                         payloadKey: "dailyHeartRateVariability",
-                        valueKeys: ["rmssdMilliseconds", "rmssd", "milliseconds", "value"],
+                        valueKeys: Self.hrvDailyKeys,
                         start: windowStart,
                         end: windowEnd
                     )
@@ -500,6 +500,21 @@ public final class SyncEngine: @unchecked Sendable {
             .map { HRSample(t: $0.key, bpm: $0.value.sum / Double($0.value.count)) }
             .sorted { $0.t < $1.t }
     }
+
+    /// Feldnamen des HRV-Werts in Google-Health-Datenpunkten, in Prioritätsreihenfolge.
+    /// `heart-rate-variability` liefert `rootMeanSquareOfSuccessiveDifferencesMilliseconds`,
+    /// `daily-heart-rate-variability` liefert `averageHeartRateVariabilityMilliseconds`
+    /// (bzw. den RMSSD im Tiefschlaf). Alte Kandidaten bleiben als Fallback.
+    public static let hrvSampleKeys = [
+        "rootMeanSquareOfSuccessiveDifferencesMilliseconds",
+        "rmssd", "rmssdMilliseconds", "milliseconds", "dailyRmssd", "value",
+    ]
+    public static let hrvDailyKeys = [
+        "averageHeartRateVariabilityMilliseconds",
+        "deepSleepRootMeanSquareOfSuccessiveDifferencesMilliseconds",
+        "rootMeanSquareOfSuccessiveDifferencesMilliseconds",
+        "rmssdMilliseconds", "rmssd", "milliseconds", "value",
+    ]
 
     static func describe(_ error: Error) -> String {
         if let apiError = error as? APIError {
