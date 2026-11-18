@@ -39,6 +39,11 @@ struct JournalView: View {
                         checkInCard
                             .padding(.top, 16)
 
+                        SectionHeading(text: "Measurements")
+                            .padding(.top, 32)
+                        MeasurementsPanel { logSheet = .weight }
+                            .padding(.top, 16)
+
                         if !model.journalInsights.isEmpty {
                             SectionHeading(text: model.loc("Erkenntnisse", "Insights"))
                                 .padding(.top, 32)
@@ -189,6 +194,137 @@ struct JournalView: View {
             .padding(.horizontal, 20)
         }
     }
+}
+
+// MARK: - Messwerte (Journal)
+
+/// Gewicht, VO₂ max, Ruhepuls und Schritte: letzter Wert gegen die 30 Tage davor.
+struct MeasurementsPanel: View {
+    @Environment(AppModel.self) private var model
+    var onWeightTap: () -> Void
+
+    // MARK: - Messwerte
+
+    var body: some View {
+        let key = model.selectedDayKey
+        return Panel(padding: 0) {
+            VStack(spacing: 0) {
+                Group {
+                    weightRow(key)
+                    PanelDivider()
+                    dailyRow(
+                        symbol: "lungs",
+                        title: "VO₂ max",
+                        unit: "",
+                        format: "%.0f",
+                        key: key
+                    ) { $0.vo2max }
+                    PanelDivider()
+                    dailyRow(
+                        symbol: "heart",
+                        title: model.loc("Ruhepuls", "Resting HR"),
+                        unit: HealthMetricKind.restingHR.unit(model.language),
+                        format: "%.0f",
+                        key: key
+                    ) { $0.restingHR }
+                    PanelDivider()
+                    dailyRow(
+                        symbol: "shoeprints.fill",
+                        title: model.loc("Schritte", "Steps"),
+                        unit: "",
+                        format: "%.0f",
+                        key: key
+                    ) { $0.steps.map(Double.init) }
+                }
+                .padding(.horizontal, 20)
+
+                Text(model.loc("Letzter Wert vs. die 30 Tage davor", "Latest reading vs. the 30 days before it"))
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.textPrimary.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.black.opacity(0.35)))
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+                    .padding(.bottom, 20)
+            }
+        }
+    }
+
+    /// Gewicht kommt aus dem Journal-Log.
+    private func weightRow(_ key: String) -> some View {
+        let latest: (date: String, kg: Double)? = model.dayLogs.values
+            .filter { $0.date <= key && $0.weightKg != nil }
+            .max { $0.date < $1.date }
+            .map { ($0.date, $0.weightKg!) }
+        let previous: Double? = latest.flatMap { latest in
+            let start = DayKey.addDays(latest.date, -30)
+            let values = model.dayLogs.values
+                .filter { $0.date >= start && $0.date < latest.date }
+                .compactMap(\.weightKg)
+            return values.isEmpty ? nil : values.reduce(0, +) / Double(values.count)
+        }
+
+        return Button {
+            onWeightTap()
+        } label: {
+            MetricRow(
+                symbol: "scalemass",
+                title: model.loc("Gewicht", "Weight"),
+                subtitle: latest.map { shortDate($0.date) } ?? "Tap to log your weight",
+                value: latest.map { String(format: "%.1f", $0.kg) } ?? "–",
+                unit: "kg",
+                comparison: previous.map { String(format: "%.1f", $0) },
+                trend: zip2(latest?.kg, previous).map { trend($0, $1) }
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Letzter Tageswert bis `key` gegen den Schnitt der 30 Tage davor.
+    private func dailyRow(
+        symbol: String,
+        title: String,
+        unit: String,
+        format: String,
+        key: String,
+        value: @escaping (DayRecord) -> Double?
+    ) -> some View {
+        let latest = DayKey.keys(from: DayKey.addDays(key, -14), to: key).reversed()
+            .first { model.record(for: $0).flatMap(value) != nil }
+            .flatMap { k in model.record(for: k).flatMap(value).map { (k, $0) } }
+        let previous: Double? = latest.flatMap { latest in
+            let values = model.trend(30, endingAt: DayKey.addDays(latest.0, -1), value).map(\.value)
+            return values.isEmpty ? nil : values.reduce(0, +) / Double(values.count)
+        }
+
+        return MetricRow(
+            symbol: symbol,
+            title: title,
+            subtitle: latest.map { shortDate($0.0) } ?? model.loc("Keine Daten", "No data"),
+            value: latest.map { formatted($0.1, format) } ?? "–",
+            unit: unit,
+            comparison: previous.map { formatted($0, format) },
+            trend: zip2(latest?.1, previous).map { trend($0, $1) }
+        )
+    }
+
+    private func formatted(_ value: Double, _ format: String) -> String {
+        if value >= 1000 { return Int(value.rounded()).formatted(.number) }
+        return String(format: format, value)
+    }
+
+    private func trend(_ latest: Double, _ previous: Double) -> MetricRow.Trend {
+        let diff = latest - previous
+        if abs(diff) < max(0.005 * abs(previous), 0.05) { return .flat }
+        return diff > 0 ? .up : .down
+    }
+
+    private func shortDate(_ key: String) -> String {
+        (DayKey.date(from: key) ?? Date()).formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+    }
+
 }
 
 // MARK: - Wochenleiste
