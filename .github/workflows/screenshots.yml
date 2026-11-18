@@ -71,6 +71,7 @@ jobs:
           shoot 0-warmup -screenshotTab home
           shoot 1-home-myday -screenshotTab home -screenshotSection myday
           shoot 2-widget -screenshotPage widget
+          shoot 3-widget -screenshotPage widget
           ls -la shots
           # Absturzberichte mitnehmen, falls die App nicht startet.
           find ~/Library/Logs/DiagnosticReports -name "Pulse*" -newer build.log -exec cp {} shots/ \; 2>/dev/null || true
