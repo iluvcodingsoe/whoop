@@ -192,8 +192,9 @@ final class AppModel {
 
         // Lokale Konstante, damit unten nicht self.language (Observable-Getter)
         // gelesen wird, bevor alle Stored Properties initialisiert sind.
-        let initialLanguage = defaults.string(forKey: Keys.language).flatMap(PulseLanguage.init(rawValue:))
-            ?? .systemDefault
+        // Die App ist jetzt nur noch auf Englisch.
+        let initialLanguage = PulseLanguage.en
+        defaults.set(initialLanguage.rawValue, forKey: Keys.language)
         language = initialLanguage
         Fmt.language = initialLanguage
 
@@ -572,13 +573,13 @@ final class AppModel {
         let pkce = PKCE()
         let state = UUID().uuidString
         guard let url = auth.authorizationURL(config: config, pkce: pkce, state: state) else {
-            lastError = "Autorisierungs-URL konnte nicht erstellt werden."
+            lastError = "Could not create the sign-in URL."
             return
         }
         do {
             let callback = try await WebAuthenticator.shared.authenticate(url: url, callbackScheme: scheme)
             guard let code = GoogleAuth.extractCode(from: callback, expectedState: state) else {
-                lastError = "Kein gültiger Autorisierungscode erhalten."
+                lastError = "No valid sign-in code received."
                 return
             }
             _ = try await auth.exchange(code: code, pkce: pkce, config: config)
@@ -673,7 +674,7 @@ final class AppModel {
         recomputeAll()
 
         if daily.hadErrors || hr.hadErrors {
-            lastError = "Sync mit Warnungen abgeschlossen – Details im Sync-Protokoll."
+            lastError = "Sync finished with warnings – see the sync log for details."
         }
 
         rescheduleRoutineNotifications()

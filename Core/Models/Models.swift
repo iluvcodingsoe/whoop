@@ -159,9 +159,9 @@ public enum BiologicalSex: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .male: return "Männlich"
-        case .female: return "Weiblich"
-        case .unspecified: return "Keine Angabe"
+        case .male: return "Male"
+        case .female: return "Female"
+        case .unspecified: return "Not specified"
         }
     }
 }

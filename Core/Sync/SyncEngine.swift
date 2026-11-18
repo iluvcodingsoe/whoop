@@ -81,7 +81,7 @@ public final class SyncEngine: @unchecked Sendable {
         let todayKey = DayKey.today()
         let startKey = DayKey.addDays(todayKey, -(max(1, daysBack) - 1))
         guard let windowStart = DayKey.date(from: startKey) else {
-            return SyncOutcome(updatedDays: days, log: [SyncLogEntry(metric: "Sync", detail: "Ungültiges Zeitfenster", isError: true)], profile: nil)
+            return SyncOutcome(updatedDays: days, log: [SyncLogEntry(metric: "Sync", detail: "Invalid time range", isError: true)], profile: nil)
         }
         let windowEnd = Date()
         let syncStamp = Date()
@@ -106,16 +106,16 @@ public final class SyncEngine: @unchecked Sendable {
         }
 
         // 1. Profil
-        report("Profil laden…")
+        report("Loading profile…")
         do {
             profile = try await client.fetchProfile()
-            note("Profil", "geladen")
+            note("Profile", "geladen")
         } catch {
-            note("Profil", Self.describe(error), error: true)
+            note("Profile", Self.describe(error), error: true)
         }
 
         // 2. Schlaf-Sessions (Zuordnung zum Aufwach-Tag)
-        report("Schlaf laden…")
+        report("Loading sleep…")
         do {
             let sessions = try await client.fetchSleepSessions(
                 start: windowStart.addingTimeInterval(-12 * 3600),
@@ -133,14 +133,14 @@ public final class SyncEngine: @unchecked Sendable {
                 }
                 update(key) { $0.sleepSessions = sorted }
             }
-            note("Schlaf", "\(sessions.count) Sessions")
+            note("Sleep", "\(sessions.count) Sessions")
         } catch {
-            note("Schlaf", Self.describe(error), error: true)
+            note("Sleep", Self.describe(error), error: true)
         }
 
         // 3. HRV (nächtlicher RMSSD). Fitbit liefert HRV je nach Gerät als
         // Sample-Strom ODER als Tagesaggregat — erst Samples, dann Tages-Fallback.
-        report("HRV laden…")
+        report("Loading HRV…")
         do {
             let result = try await client.fetchSamplesDetailed(
                 type: "heart-rate-variability",
@@ -158,7 +158,7 @@ public final class SyncEngine: @unchecked Sendable {
                 // rawCount > 0 heißt, Google liefert HRV, wir lesen nur das
                 // Wertfeld falsch aus (dann gehören die Keys oben angepasst).
                 if result.rawCount > 0 {
-                    note("HRV", "\(result.rawCount) Datenpunkte empfangen, aber kein Wert lesbar – Feldname prüfen", error: true)
+                    note("HRV", "\(result.rawCount) data points received, but no value readable – check field name", error: true)
                 }
                 do {
                     let daily = try await client.fetchDailyValues(
@@ -172,22 +172,22 @@ public final class SyncEngine: @unchecked Sendable {
                         update(key) { $0.hrvRmssd = value }
                     }
                     if daily.isEmpty {
-                        note("HRV", "keine Daten – weder Samples (\(result.rawCount) Rohpunkte) noch Tageswerte", error: result.rawCount > 0)
+                        note("HRV", "no data – neither samples (\(result.rawCount) raw points) nor daily values", error: result.rawCount > 0)
                     } else {
-                        note("HRV", "\(daily.count) Tage (Tagesaggregat)")
+                        note("HRV", "\(daily.count) days (daily aggregate)")
                     }
                 } catch {
-                    note("HRV", "keine Samples (\(result.rawCount) Rohpunkte); Tages-HRV: \(Self.describe(error))", error: true)
+                    note("HRV", "no samples (\(result.rawCount) raw points); daily HRV: \(Self.describe(error))", error: true)
                 }
             } else {
-                note("HRV", "\(result.samples.count) Samples, \(grouped.count) Nächte")
+                note("HRV", "\(result.samples.count) samples, \(grouped.count) nights")
             }
         } catch {
             note("HRV", Self.describe(error), error: true)
         }
 
         // 4. Atemfrequenz (Google-Health-Tagesaggregat aus dem Schlaf)
-        report("Atemfrequenz laden…")
+        report("Loading respiratory rate…")
         do {
             let values = try await client.fetchDailyValues(
                 type: "daily-respiratory-rate",
@@ -199,13 +199,13 @@ public final class SyncEngine: @unchecked Sendable {
             for (key, value) in values {
                 update(key) { $0.respiratoryRate = value }
             }
-            note("Atemfrequenz", "\(values.count) Tage")
+            note("Respiratory rate", "\(values.count) days")
         } catch {
-            note("Atemfrequenz", Self.describe(error), error: true)
+            note("Respiratory rate", Self.describe(error), error: true)
         }
 
         // 5. SpO2 (nächtlicher Durchschnitt + Minimum)
-        report("SpO₂ laden…")
+        report("Loading SpO₂…")
         do {
             let samples = try await client.fetchSamples(
                 type: "oxygen-saturation",
@@ -224,13 +224,13 @@ public final class SyncEngine: @unchecked Sendable {
                     $0.spo2Min = values.min()
                 }
             }
-            note("SpO₂", "\(byNight.count) Nächte")
+            note("SpO₂", "\(byNight.count) nights")
         } catch {
             note("SpO₂", Self.describe(error), error: true)
         }
 
         // 6. Temperatur (nächtliche Hauttemperatur-Ableitung, Tageswert)
-        report("Temperatur laden…")
+        report("Loading temperature…")
         do {
             let values = try await client.fetchDailyValues(
                 type: "daily-sleep-temperature-derivations",
@@ -242,13 +242,13 @@ public final class SyncEngine: @unchecked Sendable {
             for (key, value) in values {
                 update(key) { $0.bodyTemp = value }
             }
-            note("Temperatur", "\(values.count) Tage")
+            note("Temperature", "\(values.count) days")
         } catch {
-            note("Temperatur", Self.describe(error), error: true)
+            note("Temperature", Self.describe(error), error: true)
         }
 
         // 7. Ruhepuls (Tagesdatentyp; Fallback später aus Nacht-HR)
-        report("Ruhepuls laden…")
+        report("Loading resting HR…")
         do {
             let values = try await client.fetchDailyValues(
                 type: "daily-resting-heart-rate",
@@ -260,13 +260,13 @@ public final class SyncEngine: @unchecked Sendable {
             for (key, value) in values {
                 update(key) { $0.restingHR = value }
             }
-            note("Ruhepuls", "\(values.count) Tage")
+            note("Resting HR", "\(values.count) days")
         } catch {
-            note("Ruhepuls", "\(Self.describe(error)) – Fallback über Nacht-HF aktiv", error: true)
+            note("Resting HR", "\(Self.describe(error)) – using overnight heart rate instead", error: true)
         }
 
         // 7b. VO₂max / Cardio-Fitness (Tagesdatentyp, ml/kg/min)
-        report("VO₂max laden…")
+        report("Loading VO₂ max…")
         do {
             let values = try await client.fetchDailyValues(
                 type: "daily-vo2-max",
@@ -278,13 +278,13 @@ public final class SyncEngine: @unchecked Sendable {
             for (key, value) in values {
                 update(key) { $0.vo2max = value }
             }
-            note("VO₂max", "\(values.count) Tage")
+            note("VO₂max", "\(values.count) days")
         } catch {
-            note("VO₂max", "\(Self.describe(error)) – Fallback über HF-Ratio aktiv", error: true)
+            note("VO₂max", "\(Self.describe(error)) – estimating from heart rate instead", error: true)
         }
 
         // 8. Schritte (Intervall-Samples → Tagessumme)
-        report("Schritte laden…")
+        report("Loading steps…")
         do {
             let samples = try await client.fetchSamples(
                 type: "steps",
@@ -301,13 +301,13 @@ public final class SyncEngine: @unchecked Sendable {
             for (key, total) in byDay {
                 update(key) { $0.steps = Int(total) }
             }
-            note("Schritte", "\(byDay.count) Tage")
+            note("Steps", "\(byDay.count) days")
         } catch {
-            note("Schritte", Self.describe(error), error: true)
+            note("Steps", Self.describe(error), error: true)
         }
 
         // 9. Workouts
-        report("Workouts laden…")
+        report("Loading workouts…")
         do {
             let workouts = try await client.fetchExerciseSessions(start: windowStart, end: windowEnd)
             var byDay: [String: [Workout]] = [:]
@@ -361,12 +361,12 @@ public final class SyncEngine: @unchecked Sendable {
         let skipped = allKeys.count - keysToLoad.count
 
         guard !keysToLoad.isEmpty else {
-            log.append(SyncLogEntry(metric: "Herzfrequenz", detail: "\(skipped) Tage bereits vollständig"))
+            log.append(SyncLogEntry(metric: "Heart rate", detail: "\(skipped) days already complete"))
             progress?(SyncProgress(message: "Fertig", fraction: 1))
             return SyncOutcome(updatedDays: days, log: log, profile: nil)
         }
 
-        progress?(SyncProgress(message: "Herzfrequenz laden… (0/\(keysToLoad.count) Tage)", fraction: 0))
+        progress?(SyncProgress(message: "Loading heart rate… (0/\(keysToLoad.count) days)", fraction: 0))
 
         let client = self.client
         var loaded = 0
@@ -419,7 +419,7 @@ public final class SyncEngine: @unchecked Sendable {
                 }
                 done += 1
                 progress?(SyncProgress(
-                    message: "Herzfrequenz laden… (\(done)/\(keysToLoad.count) Tage)",
+                    message: "Loading heart rate… (\(done)/\(keysToLoad.count) days)",
                     fraction: Double(done) / Double(keysToLoad.count)
                 ))
                 if let key = iterator.next() {
@@ -429,13 +429,13 @@ public final class SyncEngine: @unchecked Sendable {
         }
 
         if loaded > 0 {
-            let skipText = skipped > 0 ? ", \(skipped) übersprungen" : ""
-            log.append(SyncLogEntry(metric: "Herzfrequenz", detail: "\(loaded) Tage Intraday\(skipText)"))
+            let skipText = skipped > 0 ? ", \(skipped) skipped" : ""
+            log.append(SyncLogEntry(metric: "Heart rate", detail: "\(loaded) days intraday\(skipText)"))
         } else if failed == 0 {
-            log.append(SyncLogEntry(metric: "Herzfrequenz", detail: skipped > 0 ? "\(skipped) Tage bereits vollständig" : "keine neuen Daten"))
+            log.append(SyncLogEntry(metric: "Heart rate", detail: skipped > 0 ? "\(skipped) days already complete" : "no new data"))
         }
         if failed > 0, let firstError {
-            log.append(SyncLogEntry(metric: "Herzfrequenz", detail: "\(failed) Tag(e) fehlgeschlagen: \(firstError)", isError: true))
+            log.append(SyncLogEntry(metric: "Heart rate", detail: "\(failed) day(s) failed: \(firstError)", isError: true))
         }
 
         // Ruhepuls-Fallback: 5. Perzentil der nächtlichen HF (00:00–08:00)

@@ -10,7 +10,6 @@ struct SettingsView: View {
         @Bindable var model = model
         NavigationStack {
             Form {
-                languageSection
                 connectionSection
                 syncSection
                 notificationsSection

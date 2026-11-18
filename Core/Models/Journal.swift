@@ -18,13 +18,13 @@ public enum JournalFactor: String, Codable, CaseIterable, Sendable, Identifiable
 
     public var label: String {
         switch self {
-        case .alcohol: return "Alkohol"
-        case .lateCaffeine: return "Koffein spät"
-        case .lateMeal: return "Spätes Essen"
+        case .alcohol: return "Alcohol"
+        case .lateCaffeine: return "Late caffeine"
+        case .lateMeal: return "Late meal"
         case .stress: return "Stress"
-        case .sick: return "Krank"
-        case .screenBeforeBed: return "Bildschirm vor dem Schlaf"
-        case .exercised: return "Trainiert"
+        case .sick: return "Sick"
+        case .screenBeforeBed: return "Screen before bed"
+        case .exercised: return "Worked out"
         case .sex: return "Sex"
         }
     }

@@ -55,7 +55,7 @@ public enum StrainEngine {
     /// Untergrenzen der Zonen als Anteil der Herzfrequenz-Reserve (Karvonen).
     public static let zoneLowerBounds: [Double] = [0.20, 0.30, 0.45, 0.60, 0.72, 0.85]
     public static let zoneWeights: [Double] = [0.5, 1.0, 2.5, 5.0, 8.0, 11.0]
-    public static let zoneLabels: [String] = ["Sehr leicht", "Leicht", "Moderat", "Fordernd", "Hart", "Maximal"]
+    public static let zoneLabels: [String] = ["Very light", "Light", "Moderate", "Demanding", "Hard", "Max"]
 
     public static func strain(fromRaw raw: Double, tau: Double = 450) -> Double {
         guard raw > 0 else { return 0 }

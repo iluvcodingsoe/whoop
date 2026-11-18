@@ -17,11 +17,11 @@ public enum HealthMetricKind: String, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .restingHR: return "Ruhepuls"
+        case .restingHR: return "Resting HR"
         case .hrv: return "HRV"
-        case .respiratoryRate: return "Atemfrequenz"
+        case .respiratoryRate: return "Respiratory rate"
         case .spo2: return "SpO₂"
-        case .bodyTemp: return "Hauttemperatur"
+        case .bodyTemp: return "Skin temperature"
         }
     }
 
@@ -133,8 +133,8 @@ public enum HealthMonitor {
 
     static func directionWord(_ kind: HealthMetricKind) -> String {
         switch kind {
-        case .hrv, .spo2: return "niedrig"
-        case .restingHR, .respiratoryRate, .bodyTemp: return "erhöht"
+        case .hrv, .spo2: return "low"
+        case .restingHR, .respiratoryRate, .bodyTemp: return "elevated"
         }
     }
 }
@@ -169,7 +169,7 @@ extension HealthMonitor {
             let names = today.map(\.label).sorted().joined(separator: ", ")
             return HealthAlert(
                 kinds: Array(today),
-                message: "\(today.count) Werte außerhalb deiner Baseline (\(names)) – möglicher Infekt oder Übertraining. Nimm es heute ruhiger.",
+                message: "\(today.count) readings outside your normal range (\(names)). This can mean illness or overtraining, so take it easier today.",
                 isWarning: true
             )
         }
@@ -186,7 +186,7 @@ extension HealthMonitor {
         if let worst = streaked.max(by: { $0.days < $1.days }) {
             return HealthAlert(
                 kinds: [worst.kind],
-                message: "\(worst.kind.label) seit \(worst.days) Tagen \(directionWord(worst.kind)) – achte auf Erholung.",
+                message: "\(worst.kind.label) has been \(directionWord(worst.kind)) for \(worst.days) days. Focus on recovery.",
                 isWarning: true
             )
         }

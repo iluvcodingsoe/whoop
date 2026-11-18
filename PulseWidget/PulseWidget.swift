@@ -26,9 +26,8 @@ private let appGroup: String = {
 }()
 
 /// Sprache aus dem App-Snapshot ("de"/"en", Default de).
-private var widgetIsGerman: Bool {
-    (UserDefaults(suiteName: appGroup)?.string(forKey: "app.language") ?? "de") == "de"
-}
+/// Die App ist nur noch auf Englisch.
+private var widgetIsGerman: Bool { false }
 
 // MARK: - Daten
 

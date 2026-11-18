@@ -47,18 +47,6 @@ struct OnboardingView: View {
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.textPrimary)
 
-            // Sprachwahl direkt beim Einrichten (auch später unter Mehr änderbar).
-            Picker("Sprache / Language", selection: Binding(
-                get: { model.language },
-                set: { model.language = $0 }
-            )) {
-                ForEach(PulseLanguage.allCases) { lang in
-                    Text(lang.label).tag(lang)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 220)
-            .padding(.top, 10)
             Text(model.loc("Dein persönliches Recovery-System\nfür die Fitbit Air", "Your personal recovery system\nfor the Fitbit Air"))
                 .font(.headline)
                 .foregroundStyle(Theme.textSecondary)
