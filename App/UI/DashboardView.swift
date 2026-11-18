@@ -37,6 +37,7 @@ struct HomeView: View {
                 case "sleep": SleepDetailView()
                 case "recovery": RecoveryDetailView()
                 case "strain": StrainDetailView()
+                case "widget": WidgetPreviewPage()
                 default: VitalDetailView(kind: .hrv)
                 }
             }
@@ -862,5 +863,42 @@ struct Line: Shape {
         path.move(to: CGPoint(x: rect.minX, y: rect.midY))
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
         return path
+    }
+}
+
+// MARK: - Widget-Vorschau (nur für CI-Screenshots)
+
+struct WidgetPreviewPage: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let key = model.selectedDayKey
+        let recovery = model.recovery(for: key)
+        let zone: String = {
+            switch recovery?.zone {
+            case .green: return "green"
+            case .yellow: return "yellow"
+            case .red: return "red"
+            case nil: return "none"
+            }
+        }()
+        let sleep = model.sleep(for: key)
+        let entry = PulseEntry(
+            date: Date(),
+            score: recovery?.score,
+            zone: zone,
+            sleepPerformance: (sleep?.hasData == true) ? sleep?.performance : nil,
+            strain: model.strain(for: key)?.strain,
+            strainTarget: recovery.map { StrainEngine.targetStrain(forRecovery: $0.score) }
+        )
+        ZStack {
+            Color(red: 0.62, green: 0.85, blue: 0.86).ignoresSafeArea()
+            ScoresWidgetView(entry: entry)
+                .padding(16)
+                .frame(width: 364, height: 170)
+                .background(Color(red: 0.133, green: 0.153, blue: 0.176))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        .toolbar(.hidden, for: .navigationBar)
     }
 }

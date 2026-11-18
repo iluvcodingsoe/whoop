@@ -31,15 +31,6 @@ private var widgetIsGerman: Bool { false }
 
 // MARK: - Daten
 
-struct PulseEntry: TimelineEntry {
-    let date: Date
-    let score: Int?
-    let zone: String
-    let sleepPerformance: Double?
-    let strain: Double?
-    let strainTarget: Double?
-}
-
 struct PulseProvider: TimelineProvider {
     func placeholder(in context: Context) -> PulseEntry {
         PulseEntry(date: Date(), score: 72, zone: "green", sleepPerformance: 88, strain: 9.5, strainTarget: 14.4)
@@ -216,84 +207,6 @@ struct PulseOverviewWidget: Widget {
         .configurationDisplayName(widgetIsGerman ? "Tages-Übersicht" : "Daily overview")
         .description(widgetIsGerman ? "Recovery, Schlaf und Strain (relativ zum Tagesziel) auf einen Blick." : "Recovery, sleep and strain (relative to daily target) at a glance.")
         .supportedFamilies([.systemMedium])
-    }
-}
-
-// MARK: - Breites Widget: drei Werte nebeneinander
-
-struct ScoresWidgetView: View {
-    var entry: PulseEntry
-
-    private let background = Color(red: 0.133, green: 0.153, blue: 0.176)
-    private let sleepBlue = Color(red: 0.498, green: 0.651, blue: 0.776)
-    private let strainColor = Color(red: 0.039, green: 0.576, blue: 0.961)
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center) {
-                Text("PULSE")
-                    .font(.system(size: 17, weight: .light))
-                    .kerning(3.5)
-                    .foregroundStyle(.white.opacity(0.9))
-                Spacer()
-                Text(entry.date.formatted(.dateTime.weekday(.abbreviated).day()))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-            Spacer(minLength: 6)
-            HStack(alignment: .top, spacing: 0) {
-                column(
-                    symbol: "figure.mind.and.body",
-                    value: entry.score.map { "\($0)" },
-                    unit: "%",
-                    label: "Recovery",
-                    color: entry.score == nil ? .gray : zoneColor(entry.zone)
-                )
-                column(
-                    symbol: "figure.strengthtraining.traditional",
-                    value: entry.strain.map { String(format: "%.1f", $0) },
-                    unit: "",
-                    label: "Strain",
-                    color: strainColor
-                )
-                column(
-                    symbol: "moon",
-                    value: entry.sleepPerformance.map { "\(Int($0.rounded()))" },
-                    unit: "%",
-                    label: "Sleep",
-                    color: sleepBlue
-                )
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
-        .containerBackground(background, for: .widget)
-    }
-
-    private func column(symbol: String, value: String?, unit: String, label: String, color: Color) -> some View {
-        VStack(spacing: 5) {
-            Image(systemName: symbol)
-                .font(.system(size: 22, weight: .light))
-                .foregroundStyle(.white.opacity(0.7))
-                .frame(height: 26)
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(value ?? "–")
-                    .font(.system(size: 30, weight: .bold).monospacedDigit())
-                if value != nil && !unit.isEmpty {
-                    Text(unit)
-                        .font(.system(size: 18, weight: .bold))
-                }
-            }
-            .foregroundStyle(color)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            Text(label.uppercased())
-                .font(.system(size: 12, weight: .bold))
-                .kerning(1.4)
-                .foregroundStyle(color)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 
