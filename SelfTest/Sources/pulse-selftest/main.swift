@@ -369,6 +369,21 @@ check(abs(AgeNorms.fitnessAge(vo2max: 30.9, sex: .female) - 45) < 1.0, "VO₂max
 check(AgeNorms.fitnessAge(vo2max: 55, sex: .male) < AgeNorms.fitnessAge(vo2max: 35, sex: .male), "Höherer VO₂max ⇒ jüngeres Fitness-Alter")
 let fitVeryHigh = AgeNorms.fitnessAge(vo2max: 65, sex: .male)
 check(fitVeryHigh >= 20 && fitVeryHigh <= 25, "Sehr hoher VO₂max wird auf ≥20 geklemmt (\(String(format: "%.0f", fitVeryHigh)))")
+// Google-Health-HRV-Felder (v4): Samples und Tageswerte.
+let hrvSample: [String: Any] = [
+    "rootMeanSquareOfSuccessiveDifferencesMilliseconds": 62.5,
+    "standardDeviationMilliseconds": 80.0,
+    "sampleTime": ["physicalTime": "2026-11-18T07:00:00Z"],
+]
+check(JSONExtract.firstDouble(in: hrvSample, keys: SyncEngine.hrvSampleKeys) == 62.5, "HRV-Sample: RMSSD-Feld wird gelesen")
+let hrvDaily: [String: Any] = [
+    "date": ["year": 2026, "month": 11, "day": 18],
+    "averageHeartRateVariabilityMilliseconds": 48.0,
+    "deepSleepRootMeanSquareOfSuccessiveDifferencesMilliseconds": 55.0,
+    "nonRemHeartRateBeatsPerMinute": 52.0,
+]
+check(JSONExtract.firstDouble(in: hrvDaily, keys: SyncEngine.hrvDailyKeys) == 48.0, "Tages-HRV: Durchschnittsfeld wird gelesen")
+
 check(abs(AgeNorms.hrvAge(rmssd: 46) - 35) < 1.5, "RMSSD 46 → HRV-Alter ≈ 35")
 check(AgeNorms.hrvAge(rmssd: 60) < AgeNorms.hrvAge(rmssd: 25), "Höhere HRV ⇒ jüngeres HRV-Alter")
 // Geschlecht verschiebt die Kurve.
