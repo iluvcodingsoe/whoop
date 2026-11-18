@@ -380,7 +380,15 @@ struct ScreenshotScrollAnchor: View {
             .frame(height: 1)
             .id("screenshot-bottom")
             .onAppear {
-                guard ProcessInfo.processInfo.arguments.contains("-screenshotScroll") else { return }
+                let args = ProcessInfo.processInfo.arguments
+                if let i = args.firstIndex(of: "-screenshotSection"), i + 1 < args.count,
+                   !args.contains("-screenshotPage") {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        proxy.scrollTo(args[i + 1], anchor: .top)
+                    }
+                    return
+                }
+                guard args.contains("-screenshotScroll") else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     proxy.scrollTo("screenshot-bottom", anchor: .bottom)
                 }

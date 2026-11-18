@@ -81,6 +81,7 @@ struct HomeView: View {
                 .padding(.top, 22)
 
                 myDay
+                    .id("myday")
                     .padding(.top, 34)
 
                 footer
@@ -296,6 +297,8 @@ struct HomeView: View {
                 }
             }
 
+            ActivitiesCard()
+
             NavigationLink {
                 DayReviewView()
             } label: {
@@ -336,25 +339,9 @@ struct HomeView: View {
         let key = model.selectedDayKey
         let record = model.record(for: key)
         let age = model.ageResult(for: key)
-        let workouts = record?.workouts ?? []
-        let topWorkout = workouts.max { ($0.strain ?? 0) < ($1.strain ?? 0) }
 
         return Panel(padding: 0) {
             VStack(spacing: 0) {
-                NavigationLink {
-                    StrainDetailView()
-                } label: {
-                    MetricRow(
-                        symbol: "figure.run",
-                        title: model.loc("Aktivitäten", "Activities"),
-                        subtitle: topWorkout.map { "\($0.name) · \(Int($0.durationMinutes.rounded())) min" }
-                            ?? model.loc("Kein Workout erfasst", "No workout recorded"),
-                        value: "\(workouts.count)",
-                        unit: workouts.count == 1 ? "workout" : "workouts"
-                    )
-                }
-                .buttonStyle(.plain)
-                PanelDivider()
                 NavigationLink {
                     StrainDetailView()
                 } label: {
@@ -688,5 +675,102 @@ enum DashboardView {
         if delta <= -1 { return Theme.green }
         if delta >= 1 { return Theme.orange }
         return Theme.textSecondary
+    }
+}
+
+// MARK: - Aktivitäten (My Day)
+
+/// Liste der Aktivitäten des Tages: Schlaf und Workouts mit Startzeit und Ende.
+struct ActivitiesCard: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let record = model.selectedRecord
+        let sleep = record?.mainSleep
+        let workouts = (record?.workouts ?? []).sorted { $0.start < $1.start }
+
+        VStack(alignment: .leading, spacing: 10) {
+            CapsLabel(text: "Activities", size: 13)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 4)
+
+            if let sleep {
+                NavigationLink {
+                    SleepDetailView()
+                } label: {
+                    row(
+                        pillColor: Theme.sleepPurple,
+                        symbol: "moon.fill",
+                        pillText: Fmt.hm(sleep.minutesAsleep),
+                        name: "Sleep",
+                        start: sleep.start,
+                        end: sleep.end,
+                        showDay: !Calendar.current.isDate(sleep.start, inSameDayAs: sleep.end)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            ForEach(workouts, id: \.id) { workout in
+                NavigationLink {
+                    StrainDetailView()
+                } label: {
+                    row(
+                        pillColor: Theme.strainBlue,
+                        symbol: workoutSymbol(workout.name),
+                        pillText: workout.strain.map { String(format: "%.1f", $0) } ?? "–",
+                        name: workout.name,
+                        start: workout.start,
+                        end: workout.end,
+                        showDay: false
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            if sleep == nil && workouts.isEmpty {
+                Text("No activities recorded yet.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.textSecondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 8)
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
+    }
+
+    private func row(pillColor: Color, symbol: String, pillText: String, name: String, start: Date, end: Date, showDay: Bool) -> some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.system(size: 17, weight: .semibold))
+                Text(pillText)
+                    .font(.system(size: 19, weight: .bold).monospacedDigit())
+            }
+            .foregroundStyle(Color.white)
+            .frame(width: 104, height: 46)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(pillColor))
+
+            Text(name.uppercased())
+                .font(.system(size: 15, weight: .bold))
+                .kerning(1.4)
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Spacer(minLength: 4)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text((showDay ? "[\(start.formatted(.dateTime.weekday(.abbreviated)))] " : "") + Fmt.clock(start))
+                Text(Fmt.clock(end))
+            }
+            .font(.system(size: 13).monospacedDigit())
+            .foregroundStyle(Theme.textSecondary)
+
+            Capsule()
+                .fill(pillColor)
+                .frame(width: 3, height: 32)
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.cardElevated.opacity(0.6)))
     }
 }
