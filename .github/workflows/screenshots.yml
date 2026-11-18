@@ -6,7 +6,7 @@ name: screenshots
 
 on:
   push:
-    branches: [redesign]
+    branches: [redesign, deep-dives]
   workflow_dispatch:
 
 permissions:
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   screenshots:
     name: Simulator screenshots
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     timeout-minutes: 40
 
     steps:
@@ -59,20 +59,31 @@ jobs:
           shoot() {
             name=$1; shift
             xcrun simctl launch --terminate-running-process "$UDID" net.dehlwes.pulse -screenshotDemo -screenshotYesterday "$@"
-            sleep 9
-            xcrun simctl io "$UDID" screenshot "shots/$name.png"
+            sleep 15
+            for attempt in 1 2 3 4; do
+              xcrun simctl io "$UDID" screenshot "shots/$name.png"
+              # A black (still loading) screen compresses to a tiny file.
+              size=$(stat -f%z "shots/$name.png")
+              [ "$size" -gt 150000 ] && break
+              sleep 10
+            done
           }
           shoot 1-home -screenshotTab home
-          shoot 2-home-bottom -screenshotTab home -screenshotScroll
-          shoot 3-health -screenshotTab health
-          shoot 4-health-bottom -screenshotTab health -screenshotScroll
-          shoot 5-journal -screenshotTab journal
-          shoot 6-journal-bottom -screenshotTab journal -screenshotScroll
-          shoot 7-more -screenshotTab more
-          for page in stress review vital; do
-            shoot "8-$page" -screenshotTab home -screenshotPage "$page"
-          done
+          shoot 2-sleep -screenshotPage sleep
+          shoot 3-sleep-stages -screenshotPage sleep -screenshotSection stages
+          shoot 4-sleep-performance -screenshotPage sleep -screenshotSection performance
+          shoot 5-sleep-trends -screenshotPage sleep -screenshotSection vitals
+          shoot 6-recovery -screenshotPage recovery
+          shoot 7-recovery-drivers -screenshotPage recovery -screenshotSection drivers
+          shoot 8-recovery-trends -screenshotPage recovery -screenshotSection trends
+          shoot 9-strain -screenshotPage strain
+          shoot 10-strain-zones -screenshotPage strain -screenshotSection zones
+          shoot 11-strain-activities -screenshotPage strain -screenshotSection activities
+          shoot 12-strain-trends -screenshotPage strain -screenshotSection trends
           ls -la shots
+          # Absturzberichte mitnehmen, falls die App nicht startet.
+          find ~/Library/Logs/DiagnosticReports -name "Pulse*" -newer build.log -exec cp {} shots/ \; 2>/dev/null || true
+          xcrun simctl spawn "$UDID" log show --last 10m --predicate 'process == "Pulse"' --style compact 2>/dev/null | tail -200 > shots/pulse-log.txt || true
 
       - name: Publish to ci-screenshots branch
         env:

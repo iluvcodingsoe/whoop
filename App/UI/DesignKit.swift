@@ -387,3 +387,233 @@ struct ScreenshotScrollAnchor: View {
             }
     }
 }
+
+// MARK: - Deep-Dive-Bausteine (Sleep, Recovery, Strain)
+
+/// Großer Ring oben auf den Detailseiten.
+struct DeepDiveHero: View {
+    let value: String
+    let unit: String
+    let caption: String
+    let fraction: Double
+    let color: Color
+    var marker: Double? = nil
+    var size: CGFloat = 200
+
+    @State private var shown = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Theme.track.opacity(0.7), lineWidth: 12)
+            Circle()
+                .trim(from: 0, to: shown ? CGFloat(Stats.clamp(fraction, 0.004, 1)) : 0.004)
+                .stroke(color, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .shadow(color: color.opacity(0.35), radius: 10)
+            if let marker {
+                GeometryReader { geo in
+                    let r = min(geo.size.width, geo.size.height) / 2
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: 4, height: 20)
+                        .position(x: geo.size.width / 2, y: geo.size.height / 2 - r)
+                        .rotationEffect(.degrees(Stats.clamp(marker, 0, 1) * 360))
+                }
+            }
+            VStack(spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(value)
+                        .font(.system(size: 58, weight: .bold).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    if !unit.isEmpty {
+                        Text(unit)
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(Theme.textPrimary.opacity(0.8))
+                    }
+                }
+                CapsLabel(text: caption, color: Theme.textSecondary, size: 12)
+            }
+            .padding(.horizontal, 24)
+        }
+        .frame(width: size, height: size)
+        .frame(maxWidth: .infinity)
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.0)) { shown = true }
+        }
+    }
+}
+
+/// Zeitraum-Auswahl (7 / 30 / 90 Tage) als Kapsel-Segmente.
+struct RangePicker: View {
+    @Binding var days: Int
+    var options: [Int] = [7, 30, 90]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(options, id: \.self) { option in
+                let active = option == days
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) { days = option }
+                } label: {
+                    Text("\(option)D")
+                        .font(.system(size: 13, weight: .bold))
+                        .kerning(1)
+                        .foregroundStyle(active ? Color.black : Theme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .background(Capsule().fill(active ? Color.white : Color.clear))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(Capsule().fill(Color.white.opacity(0.06)))
+    }
+}
+
+/// Kachel mit Label, großem Wert und Unterzeile.
+struct StatTile: View {
+    let label: String
+    let value: String
+    var unit: String = ""
+    var sub: String? = nil
+    var subColor: Color = Theme.textSecondary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            CapsLabel(text: label, color: Theme.textSecondary, size: 11)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(size: 26, weight: .bold).monospacedDigit())
+                    .foregroundStyle(Theme.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+            if let sub {
+                Text(sub)
+                    .font(.system(size: 13))
+                    .foregroundStyle(subColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Theme.card))
+    }
+}
+
+/// Zeile mit Titel, Wert rechts und farbigem Fortschrittsbalken darunter.
+struct ProgressRow: View {
+    let title: String
+    let value: String
+    let fraction: Double
+    let color: Color
+    var detail: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Text(value)
+                    .font(.system(size: 17, weight: .bold).monospacedDigit())
+                    .foregroundStyle(Theme.textPrimary)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.08))
+                    Capsule()
+                        .fill(color)
+                        .frame(width: max(6, geo.size.width * CGFloat(Stats.clamp(fraction, 0, 1))))
+                }
+            }
+            .frame(height: 8)
+            if let detail {
+                Text(detail)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 16)
+    }
+}
+
+/// Wert gegen Schnitt: "▲ 4 vs. avg" in grün/orange, je nachdem was gut ist.
+struct VersusLabel: View {
+    let current: Double
+    let average: Double
+    let higherIsBetter: Bool
+    let format: String
+    let suffix: String
+
+    var body: some View {
+        let diff = current - average
+        let good = higherIsBetter ? diff >= 0 : diff <= 0
+        let flat = abs(diff) < max(abs(average) * 0.01, 0.05)
+        HStack(spacing: 4) {
+            Image(systemName: flat ? "equal" : (diff > 0 ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill"))
+                .font(.system(size: 9, weight: .bold))
+            Text(String(format: format, abs(diff)) + suffix)
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+        }
+        .foregroundStyle(flat ? Theme.textSecondary : (good ? Theme.green : Theme.orange))
+    }
+}
+
+/// Farbe für Prozent-Kennzahlen (≥ 85 gut, ≥ 70 mittel, sonst schwach).
+func percentColor(_ value: Double) -> Color {
+    if value >= 85 { return Theme.green }
+    if value >= 70 { return Theme.yellow }
+    return Theme.red
+}
+
+/// Passendes SF-Symbol für einen Workout-Namen (Deutsch oder Englisch).
+func workoutSymbol(_ name: String) -> String {
+    let n = name.lowercased()
+    if n.contains("golf") { return "figure.golf" }
+    if n.contains("lauf") || n.contains("run") || n.contains("jog") { return "figure.run" }
+    if n.contains("kraft") || n.contains("strength") || n.contains("weight") || n.contains("gym") { return "dumbbell.fill" }
+    if n.contains("rad") || n.contains("bike") || n.contains("cycl") { return "figure.outdoor.cycle" }
+    if n.contains("schwimm") || n.contains("swim") { return "figure.pool.swim" }
+    if n.contains("yoga") { return "figure.yoga" }
+    if n.contains("geh") || n.contains("walk") || n.contains("spazier") || n.contains("wander") || n.contains("hik") { return "figure.walk" }
+    if n.contains("tennis") { return "figure.tennis" }
+    if n.contains("fußball") || n.contains("soccer") || n.contains("football") { return "figure.soccer" }
+    if n.contains("basket") { return "figure.basketball" }
+    return "figure.mixed.cardio"
+}
+
+/// ScrollView der Detailseiten. Für CI-Screenshots kann `-screenshotSection <id>`
+/// direkt zu einem Abschnitt springen.
+struct DeepDiveScroll<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                content
+            }
+            .scrollIndicators(.hidden)
+            .onAppear {
+                let args = ProcessInfo.processInfo.arguments
+                guard let i = args.firstIndex(of: "-screenshotSection"), i + 1 < args.count else { return }
+                let id = args[i + 1]
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    proxy.scrollTo(id, anchor: .top)
+                }
+            }
+        }
+    }
+}

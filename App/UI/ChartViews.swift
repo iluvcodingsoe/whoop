@@ -355,3 +355,40 @@ func defaultYAxis() -> some AxisContent {
         AxisValueLabel().foregroundStyle(Theme.textSecondary)
     }
 }
+
+// MARK: - Strain-Balken mit Tagesziel
+
+struct StrainBarsChart: View {
+    let points: [TrendPoint]
+    /// Tagesziel je Tag (aus der Recovery), als weißer Strich.
+    let targets: [TrendPoint]
+    var height: CGFloat = 180
+
+    var body: some View {
+        Chart {
+            ForEach(points) { point in
+                BarMark(
+                    x: .value("Tag", point.date, unit: .day),
+                    y: .value("Strain", point.value)
+                )
+                .foregroundStyle(Theme.strainBlue.gradient)
+                .cornerRadius(3)
+            }
+            ForEach(targets) { point in
+                PointMark(
+                    x: .value("Tag", point.date, unit: .day),
+                    y: .value("Ziel", point.value)
+                )
+                .symbol {
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: 10, height: 3)
+                }
+            }
+        }
+        .chartYScale(domain: 0...21)
+        .chartXAxis { defaultXAxis() }
+        .chartYAxis { defaultYAxis() }
+        .frame(height: height)
+    }
+}

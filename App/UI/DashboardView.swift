@@ -34,6 +34,9 @@ struct HomeView: View {
                 switch page {
                 case "stress": StressDetailView()
                 case "review": DayReviewView()
+                case "sleep": SleepDetailView()
+                case "recovery": RecoveryDetailView()
+                case "strain": StrainDetailView()
                 default: VitalDetailView(kind: .hrv)
                 }
             }
