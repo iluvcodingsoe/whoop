@@ -206,6 +206,18 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section(model.loc("Über", "About")) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Widget data")
+                    Spacer()
+                    Text(WidgetBridge.isAvailable ? "Connected" : "Not available")
+                        .foregroundStyle(WidgetBridge.isAvailable ? Theme.green : Theme.orange)
+                }
+                Text(WidgetBridge.appGroup)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary)
+                    .textSelection(.enabled)
+            }
             LabeledContent("App", value: "Pulse 1.0")
             LabeledContent(model.loc("Datenquelle", "Data source"), value: "Google Health API (v4)")
             Text(model.loc("Pulse liest die Daten deiner Fitbit Air über die Google Health API (Nachfolger der Fitbit Web API, die im September 2026 abgeschaltet wird) und berechnet daraus Whoop-artige Recovery-, Strain- und Schlaf-Scores – rein lokal, ohne Abo.", "Pulse reads your Fitbit Air data via the Google Health API (successor of the Fitbit Web API, shutting down September 2026) and computes Whoop-style recovery, strain and sleep scores – fully local, no subscription."))

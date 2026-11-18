@@ -12,6 +12,51 @@ struct PulseEntry: TimelineEntry {
     let strainTarget: Double?
 }
 
+/// Findet die App Group, die dieses Build wirklich nutzen darf. Sideloading-Tools
+/// (Sideloadly, AltStore, SideStore …) signieren mit einer eigenen Gruppe neu. Die
+/// zuverlässigste Quelle ist das eingebettete Provisioning-Profil, dessen
+/// Entitlements die tatsächlich erteilten Gruppen enthalten.
+enum AppGroupResolver {
+    static let fallback = "group.net.dehlwes.pulse"
+
+    /// Gruppen aus `embedded.mobileprovision` eines Bundles.
+    static func profileGroups(in bundle: Bundle) -> [String] {
+        guard let url = bundle.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url),
+              let start = data.range(of: Data("<?xml".utf8)),
+              let end = data.range(of: Data("</plist>".utf8), in: start.lowerBound..<data.endIndex)
+        else { return [] }
+        let plistData = data.subdata(in: start.lowerBound..<end.upperBound)
+        guard let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+              let entitlements = plist["Entitlements"] as? [String: Any],
+              let groups = entitlements["com.apple.security.application-groups"] as? [String]
+        else { return [] }
+        return groups
+    }
+
+    /// Kandidaten in Reihenfolge; `bundles` = eigenes Bundle und ggf. die Host-App.
+    static func candidates(bundles: [Bundle]) -> [String] {
+        var result: [String] = []
+        for bundle in bundles { result += profileGroups(in: bundle) }
+        for bundle in bundles {
+            result += bundle.object(forInfoDictionaryKey: "ALTAppGroups") as? [String] ?? []
+        }
+        result.append(fallback)
+        for bundle in bundles {
+            if let id = bundle.bundleIdentifier { result.append("group." + id) }
+        }
+        var seen = Set<String>()
+        return result.filter { seen.insert($0).inserted }
+    }
+
+    static func resolve(bundles: [Bundle]) -> String {
+        let list = candidates(bundles: bundles)
+        return list.first {
+            FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0) != nil
+        } ?? list.first ?? fallback
+    }
+}
+
 /// Recovery-Zonenfarbe im Widget.
 func widgetZoneColor(_ zone: String) -> Color {
     switch zone {

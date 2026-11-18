@@ -10,19 +10,9 @@ import SwiftUI
 /// an der App fest, daher wird zusätzlich die umschließende App gelesen
 /// (Pulse.app/PlugIns/PulseWidget.appex).
 private let appGroup: String = {
-    let fallback = "group.net.dehlwes.pulse"
     let appURL = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent()
-    let hostApp = Bundle(url: appURL)
-    var candidates = [Bundle.main, hostApp].compactMap { $0 }.flatMap {
-        $0.object(forInfoDictionaryKey: "ALTAppGroups") as? [String] ?? []
-    }
-    candidates.append(fallback)
-    if let bundleID = hostApp?.bundleIdentifier {
-        candidates.append("group." + bundleID)
-    }
-    return candidates.first {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0) != nil
-    } ?? fallback
+    let bundles = [Bundle(url: appURL), Bundle.main].compactMap { $0 }
+    return AppGroupResolver.resolve(bundles: bundles)
 }()
 
 /// Sprache aus dem App-Snapshot ("de"/"en", Default de).
@@ -228,6 +218,5 @@ struct PulseWidgets: WidgetBundle {
     var body: some Widget {
         PulseScoresWidget()
         PulseRecoveryWidget()
-        PulseOverviewWidget()
     }
 }
