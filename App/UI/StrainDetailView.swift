@@ -4,6 +4,7 @@ import SwiftUI
 struct StrainDetailView: View {
     @Environment(AppModel.self) private var model
     @State private var range = 7
+    @State private var editing: WorkoutRef?
 
     var body: some View {
         DeepDiveScroll {
@@ -62,6 +63,9 @@ struct StrainDetailView: View {
         }
         .background(ScreenBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $editing) { ref in
+            ActivityDetailSheet(workoutID: ref.id, dayKey: model.selectedDayKey)
+        }
     }
 
     private var footerText: String {
@@ -333,7 +337,12 @@ struct StrainDetailView: View {
         } else {
             VStack(spacing: 12) {
                 ForEach(workouts, id: \.id) { workout in
-                    workoutCard(workout)
+                    Button {
+                        editing = WorkoutRef(id: workout.id)
+                    } label: {
+                        workoutCard(workout)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

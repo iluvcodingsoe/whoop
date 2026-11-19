@@ -429,10 +429,71 @@ final class AppModel {
         editActivities(key) { $0.removeAll { $0.id == id } }
     }
 
+    /// Art einer Aktivität ändern (Google-Workout oder selbst erfasst).
+    func changeWorkoutType(_ workoutID: String, to type: String, on key: String) {
+        if let id = Self.loggedID(workoutID) {
+            editActivities(key) { list in
+                if let i = list.firstIndex(where: { $0.id == id }) { list[i].type = type }
+            }
+        } else {
+            updateDayLog(key) { log in
+                var map = log.workoutTypes ?? [:]
+                map[workoutID] = type
+                log.workoutTypes = map
+            }
+        }
+    }
+
+    /// Aktivität löschen. Google-Workouts werden ausgeblendet und bleiben es auch nach dem Sync.
+    func deleteWorkout(_ workoutID: String, on key: String) {
+        if let id = Self.loggedID(workoutID) {
+            deleteActivity(id, on: key)
+        } else {
+            updateDayLog(key) { log in
+                var hidden = log.hiddenWorkouts ?? []
+                if !hidden.contains(workoutID) { hidden.append(workoutID) }
+                log.hiddenWorkouts = hidden
+            }
+        }
+    }
+
+    /// Gelöschte Google-Workouts eines Tages wiederherstellen.
+    func restoreHiddenWorkouts(on key: String) {
+        updateDayLog(key) { $0.hiddenWorkouts = nil }
+    }
+
+    func hiddenWorkoutCount(on key: String) -> Int {
+        dayLog(for: key).hiddenWorkouts?.count ?? 0
+    }
+
+    /// Zeiten einer selbst erfassten Aktivität ändern.
+    func updateActivityTimes(_ workoutID: String, start: Date, end: Date, on key: String) {
+        guard let id = Self.loggedID(workoutID) else { return }
+        editActivities(key) { list in
+            if let i = list.firstIndex(where: { $0.id == id }) {
+                list[i].start = start
+                list[i].end = max(end, start.addingTimeInterval(60))
+            }
+        }
+    }
+
+    static func loggedID(_ workoutID: String) -> UUID? {
+        workoutID.hasPrefix("log-") ? UUID(uuidString: String(workoutID.dropFirst(4))) : nil
+    }
+
     /// Workouts aus Google plus fertige, selbst erfasste Aktivitäten (mit Strain aus der HF).
     func allWorkouts(for key: String) -> [Workout] {
         let record = store.days[key]
-        var list = record?.workouts ?? []
+        let log = dayLog(for: key)
+        let hidden = Set(log.hiddenWorkouts ?? [])
+        let renamed = log.workoutTypes ?? [:]
+        var list = (record?.workouts ?? [])
+            .filter { !hidden.contains($0.id) }
+            .map { workout -> Workout in
+                var w = workout
+                if let name = renamed[w.id] { w.name = name }
+                return w
+            }
         let samples = (store.days[DayKey.addDays(key, -1)]?.hrSamples ?? []) + (record?.hrSamples ?? [])
         for activity in loggedActivities(for: key) where activity.isDone {
             guard let start = activity.start, let end = activity.end else { continue }

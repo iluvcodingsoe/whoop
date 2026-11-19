@@ -79,6 +79,10 @@ public struct DailyLog: Codable, Sendable {
     public var mood: Mood?
     /// Selbst erfasste oder geplante Aktivitäten (optional, damit alte Dateien lesbar bleiben).
     public var activities: [LoggedActivity]?
+    /// Vom Nutzer korrigierte Art eines Google-Workouts (Workout-ID → Name).
+    public var workoutTypes: [String: String]?
+    /// Vom Nutzer gelöschte Google-Workouts (IDs).
+    public var hiddenWorkouts: [String]?
 
     public init(date: String, waterGlasses: Int = 0, food: [FoodItem] = [], weightKg: Double? = nil, mood: Mood? = nil, activities: [LoggedActivity]? = nil) {
         self.date = date
@@ -91,6 +95,7 @@ public struct DailyLog: Codable, Sendable {
 
     public var isEmpty: Bool {
         waterGlasses == 0 && food.isEmpty && weightKg == nil && mood == nil && (activities ?? []).isEmpty
+            && (workoutTypes ?? [:]).isEmpty && (hiddenWorkouts ?? []).isEmpty
     }
 }
 
