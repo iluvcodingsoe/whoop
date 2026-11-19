@@ -71,6 +71,7 @@ struct StrainDetailView: View {
     }
 
     private static func isStrength(_ workout: Workout) -> Bool {
+        if let kind = ActivityCatalog.kind(named: workout.name) { return kind.countsAsStrength }
         let n = workout.name.lowercased()
         return ["strength", "weight", "kraft", "gym", "lifting", "functional", "crossfit", "hiit"].contains { n.contains($0) }
     }
@@ -80,7 +81,7 @@ struct StrainDetailView: View {
         func low(_ s: StrainResult) -> Double { s.zoneMinutes.prefix(3).reduce(0, +) }
         func high(_ s: StrainResult) -> Double { s.zoneMinutes.dropFirst(3).reduce(0, +) }
         func strength(_ r: DayRecord) -> Double {
-            r.workouts.filter(Self.isStrength).reduce(0) { $0 + $1.durationMinutes }
+            model.allWorkouts(for: r.date).filter(Self.isStrength).reduce(0) { $0 + $1.durationMinutes }
         }
         let record = model.selectedRecord
         let lowAvg = model.average30(before: key) { r in model.strain(for: r.date).map(low) }
