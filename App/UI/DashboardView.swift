@@ -6,6 +6,7 @@ struct HomeView: View {
     @State private var logSheet: LogKind?
     /// Nur für CI-Screenshots: öffnet direkt eine Unterseite.
     @State private var screenshotPage: String?
+    @State private var showYearReview = false
 
     var body: some View {
         NavigationStack {
@@ -30,6 +31,9 @@ struct HomeView: View {
             .sheet(item: $logSheet) { kind in
                 LogSheet(kind: kind, dayKey: model.selectedDayKey)
             }
+            .fullScreenCover(isPresented: $showYearReview) {
+                YearReviewView()
+            }
             .navigationDestination(item: $screenshotPage) { page in
                 switch page {
                 case "stress": StressDetailView()
@@ -38,6 +42,7 @@ struct HomeView: View {
                 case "recovery": RecoveryDetailView()
                 case "strain": StrainDetailView()
                 case "widget": WidgetPreviewPage()
+                case "year": YearReviewView()
                 default: VitalDetailView(kind: .hrv)
                 }
             }
@@ -117,7 +122,9 @@ struct HomeView: View {
                 .buttonStyle(.plain)
                 .zIndex(1)
 
-                if model.streakDays > 0 {
+                Button {
+                    showYearReview = true
+                } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
                             .font(.system(size: 13))
@@ -134,6 +141,7 @@ struct HomeView: View {
                     .background(Capsule().fill(Color.white.opacity(0.06)))
                     .fixedSize()
                 }
+                .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
