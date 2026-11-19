@@ -49,6 +49,25 @@ public struct FoodItem: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+/// Selbst erfasste Aktivität: geplant (ohne Start), läuft (ohne Ende) oder fertig.
+public struct LoggedActivity: Codable, Hashable, Sendable, Identifiable {
+    public var id: UUID
+    public var type: String
+    public var start: Date?
+    public var end: Date?
+
+    public init(id: UUID = UUID(), type: String, start: Date? = nil, end: Date? = nil) {
+        self.id = id
+        self.type = type
+        self.start = start
+        self.end = end
+    }
+
+    public var isPlanned: Bool { start == nil }
+    public var isActive: Bool { start != nil && end == nil }
+    public var isDone: Bool { start != nil && end != nil }
+}
+
 /// Was der Nutzer an einem Tag selbst einträgt: Wasser, Essen, Gewicht, Stimmung.
 /// Bleibt nur auf dem Gerät.
 public struct DailyLog: Codable, Sendable {
@@ -58,17 +77,20 @@ public struct DailyLog: Codable, Sendable {
     public var food: [FoodItem]
     public var weightKg: Double?
     public var mood: Mood?
+    /// Selbst erfasste oder geplante Aktivitäten (optional, damit alte Dateien lesbar bleiben).
+    public var activities: [LoggedActivity]?
 
-    public init(date: String, waterGlasses: Int = 0, food: [FoodItem] = [], weightKg: Double? = nil, mood: Mood? = nil) {
+    public init(date: String, waterGlasses: Int = 0, food: [FoodItem] = [], weightKg: Double? = nil, mood: Mood? = nil, activities: [LoggedActivity]? = nil) {
         self.date = date
         self.waterGlasses = waterGlasses
         self.food = food
         self.weightKg = weightKg
         self.mood = mood
+        self.activities = activities
     }
 
     public var isEmpty: Bool {
-        waterGlasses == 0 && food.isEmpty && weightKg == nil && mood == nil
+        waterGlasses == 0 && food.isEmpty && weightKg == nil && mood == nil && (activities ?? []).isEmpty
     }
 }
 

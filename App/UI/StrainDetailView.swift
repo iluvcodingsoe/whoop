@@ -141,7 +141,7 @@ struct StrainDetailView: View {
 
     private func hero(_ strain: StrainResult) -> some View {
         let record = model.selectedRecord
-        let calories = (record?.workouts ?? []).compactMap(\.calories).reduce(0, +)
+        let calories = model.allWorkouts(for: model.selectedDayKey).compactMap(\.calories).reduce(0, +)
 
         return VStack(spacing: 22) {
             DeepDiveHero(
@@ -322,7 +322,7 @@ struct StrainDetailView: View {
 
     @ViewBuilder
     private var activitiesPanel: some View {
-        let workouts = (model.selectedRecord?.workouts ?? []).sorted { $0.start < $1.start }
+        let workouts = model.allWorkouts(for: model.selectedDayKey)
         if workouts.isEmpty {
             Panel {
                 Text(model.loc("Kein Workout an diesem Tag erfasst.", "No workout recorded on this day."))
@@ -356,7 +356,7 @@ struct StrainDetailView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        Image(systemName: workoutSymbol(workout.name))
+                        Image(systemName: ActivityCatalog.symbol(for: workout.name))
                             .font(.system(size: 16))
                             .foregroundStyle(Theme.strainBlue)
                         Text(workout.name)
