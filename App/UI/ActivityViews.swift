@@ -253,6 +253,8 @@ struct ActivityPickerSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let mode: ActivitySheetMode
+    /// Wenn gesetzt: nur auswählen (z. B. um die Art einer Aktivität zu ändern).
+    var onPick: ((ActivityKind) -> Void)? = nil
     @State private var search = ""
 
     private var filtered: [ActivityKind] {
@@ -290,7 +292,7 @@ struct ActivityPickerSheet: View {
             .scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
             .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search activities")
-            .navigationTitle(mode == .start ? "Start activity" : "Add activity")
+            .navigationTitle(onPick != nil ? "Change activity" : (mode == .start ? "Start activity" : "Add activity"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -314,6 +316,14 @@ struct ActivityPickerSheet: View {
             Text(kind.name)
                 .foregroundStyle(Theme.textPrimary)
         }
+        if let onPick {
+            Button {
+                onPick(kind)
+                dismiss()
+            } label: {
+                label
+            }
+        } else {
         switch mode {
         case .start:
             Button {
@@ -324,6 +334,7 @@ struct ActivityPickerSheet: View {
             }
         case .add:
             NavigationLink(value: kind) { label }
+        }
         }
     }
 }
@@ -397,4 +408,129 @@ struct AddActivityForm: View {
         let minutes = max(0, end.timeIntervalSince(start) / 60)
         return minutes < 60 ? "\(Int(minutes)) min" : "\(Fmt.hm(minutes)) h"
     }
+}
+
+// MARK: - Aktivität bearbeiten
+
+/// Details einer Aktivität mit Art ändern, Zeiten ändern (selbst erfasst) und Löschen.
+struct ActivityDetailSheet: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    let workoutID: String
+    let dayKey: String
+
+    @State private var changingType = false
+    @State private var confirmDelete = false
+    @State private var start = Date()
+    @State private var end = Date()
+
+    private var workout: Workout? {
+        model.allWorkouts(for: dayKey).first { $0.id == workoutID }
+    }
+
+    private var isLogged: Bool { AppModel.loggedID(workoutID) != nil }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let workout {
+                    Section {
+                        HStack(spacing: 16) {
+                            Image(systemName: ActivityCatalog.symbol(for: workout.name))
+                                .font(.system(size: 26))
+                                .foregroundStyle(Theme.strainBlue)
+                                .frame(width: 44, height: 44)
+                                .background(Circle().fill(Theme.strainBlue.opacity(0.15)))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(workout.name)
+                                    .font(.system(size: 20, weight: .semibold))
+                                Text("\(Fmt.clock(workout.start)) – \(Fmt.clock(workout.end)) · \(Int(workout.durationMinutes.rounded())) min")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        LabeledContent("Strain", value: workout.strain.map { String(format: "%.1f", $0) } ?? "–")
+                        if let hr = workout.averageHR {
+                            LabeledContent("Average heart rate", value: "\(Int(hr.rounded())) bpm")
+                        }
+                        if let kcal = workout.calories {
+                            LabeledContent("Calories", value: "\(Int(kcal.rounded())) kcal")
+                        }
+                        LabeledContent("Source", value: isLogged ? "Logged by you" : "Detected by Google Health")
+                    }
+
+                    Section {
+                        Button {
+                            changingType = true
+                        } label: {
+                            Label("Change activity type", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        NavigationLink {
+                            StrainDetailView()
+                        } label: {
+                            Label("View strain details", systemImage: "chart.bar")
+                        }
+                    }
+
+                    if isLogged {
+                        Section("Time") {
+                            DatePicker("Start", selection: $start, in: ...Date())
+                            DatePicker("End", selection: $end, in: start...Date())
+                            Button("Save times") {
+                                model.updateActivityTimes(workoutID, start: start, end: end, on: dayKey)
+                            }
+                        }
+                    }
+
+                    Section {
+                        Button(role: .destructive) {
+                            confirmDelete = true
+                        } label: {
+                            Label("Delete activity", systemImage: "trash")
+                        }
+                    } footer: {
+                        if !isLogged {
+                            Text("Deleting hides it in Pulse. It stays in Google Health and won\u{2019}t come back on the next sync.")
+                        }
+                    }
+                } else {
+                    Text("This activity no longer exists.")
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg.ignoresSafeArea())
+            .navigationTitle("Activity")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $changingType) {
+                ActivityPickerSheet(mode: .add) { kind in
+                    model.changeWorkoutType(workoutID, to: kind.name, on: dayKey)
+                }
+            }
+            .confirmationDialog("Delete this activity?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Delete", role: .destructive) {
+                    model.deleteWorkout(workoutID, on: dayKey)
+                    dismiss()
+                }
+            }
+            .onAppear {
+                if let workout {
+                    start = workout.start
+                    end = workout.end
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+/// Damit `.sheet(item:)` eine Workout-ID verwenden kann.
+struct WorkoutRef: Identifiable, Hashable {
+    let id: String
 }

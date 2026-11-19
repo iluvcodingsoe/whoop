@@ -689,6 +689,7 @@ struct ActivitiesCard: View {
     @Environment(AppModel.self) private var model
     @State private var sheet: ActivitySheetMode?
     @State private var pendingAction: LoggedActivity?
+    @State private var editing: WorkoutRef?
 
     var body: some View {
         let key = model.selectedDayKey
@@ -715,8 +716,8 @@ struct ActivitiesCard: View {
             }
 
             ForEach(workouts, id: \.id) { workout in
-                NavigationLink {
-                    StrainDetailView()
+                Button {
+                    editing = WorkoutRef(id: workout.id)
                 } label: {
                     row(pill: filledPill(color: Theme.strainBlue, symbol: ActivityCatalog.symbol(for: workout.name),
                                          text: workout.strain.map { String(format: "%.1f", $0) } ?? "–"),
@@ -724,14 +725,29 @@ struct ActivitiesCard: View {
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
-                    if workout.id.hasPrefix("log-"), let id = UUID(uuidString: String(workout.id.dropFirst(4))) {
-                        Button(role: .destructive) {
-                            model.deleteActivity(id, on: key)
-                        } label: {
-                            Label("Delete activity", systemImage: "trash")
-                        }
+                    Button {
+                        editing = WorkoutRef(id: workout.id)
+                    } label: {
+                        Label("Edit activity", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        model.deleteWorkout(workout.id, on: key)
+                    } label: {
+                        Label("Delete activity", systemImage: "trash")
                     }
                 }
+            }
+
+            if model.hiddenWorkoutCount(on: key) > 0 {
+                Button {
+                    model.restoreHiddenWorkouts(on: key)
+                } label: {
+                    Text("Restore \(model.hiddenWorkoutCount(on: key)) deleted")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.horizontal, 6)
+                }
+                .buttonStyle(.plain)
             }
 
             ForEach(active) { activity in
@@ -790,6 +806,9 @@ struct ActivitiesCard: View {
         .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
         .sheet(item: $sheet) { mode in
             ActivityPickerSheet(mode: mode)
+        }
+        .sheet(item: $editing) { ref in
+            ActivityDetailSheet(workoutID: ref.id, dayKey: key)
         }
         .confirmationDialog(pendingAction?.type ?? "", isPresented: Binding(
             get: { pendingAction != nil },
