@@ -377,6 +377,79 @@ final class AppModel {
         return count
     }
 
+    // MARK: - Selbst erfasste Aktivitäten
+
+    func loggedActivities(for key: String) -> [LoggedActivity] {
+        dayLog(for: key).activities ?? []
+    }
+
+    private func editActivities(_ key: String, _ change: (inout [LoggedActivity]) -> Void) {
+        updateDayLog(key) { log in
+            var list = log.activities ?? []
+            change(&list)
+            log.activities = list.isEmpty ? nil : list
+        }
+    }
+
+    /// Bereits erledigte Aktivität nachtragen.
+    func addActivity(type: String, start: Date, end: Date) {
+        let key = DayKey.string(from: start)
+        editActivities(key) { $0.append(LoggedActivity(type: type, start: start, end: max(end, start.addingTimeInterval(60)))) }
+    }
+
+    /// Aktivität für einen Tag einplanen ("Pending").
+    func planActivity(type: String, on key: String) {
+        editActivities(key) { $0.append(LoggedActivity(type: type)) }
+    }
+
+    /// Aktivität jetzt starten (läuft bis "Stop").
+    func startActivity(type: String) {
+        editActivities(DayKey.today()) { $0.append(LoggedActivity(type: type, start: Date())) }
+    }
+
+    /// Geplante Aktivität jetzt starten.
+    func startPlanned(_ id: UUID, on key: String) {
+        editActivities(key) { list in
+            if let i = list.firstIndex(where: { $0.id == id }) { list[i].start = Date() }
+        }
+        if key != DayKey.today(), let activity = loggedActivities(for: key).first(where: { $0.id == id }) {
+            // Auf heute verschieben, damit sie beim richtigen Tag landet.
+            editActivities(key) { $0.removeAll { $0.id == id } }
+            editActivities(DayKey.today()) { $0.append(activity) }
+        }
+    }
+
+    func stopActivity(_ id: UUID, on key: String) {
+        editActivities(key) { list in
+            if let i = list.firstIndex(where: { $0.id == id }) { list[i].end = Date() }
+        }
+    }
+
+    func deleteActivity(_ id: UUID, on key: String) {
+        editActivities(key) { $0.removeAll { $0.id == id } }
+    }
+
+    /// Workouts aus Google plus fertige, selbst erfasste Aktivitäten (mit Strain aus der HF).
+    func allWorkouts(for key: String) -> [Workout] {
+        let record = store.days[key]
+        var list = record?.workouts ?? []
+        let samples = (store.days[DayKey.addDays(key, -1)]?.hrSamples ?? []) + (record?.hrSamples ?? [])
+        for activity in loggedActivities(for: key) where activity.isDone {
+            guard let start = activity.start, let end = activity.end else { continue }
+            let slice = samples.filter { $0.t >= start && $0.t <= end }
+            var workout = Workout(
+                id: "log-" + activity.id.uuidString,
+                name: activity.type,
+                start: start,
+                end: end,
+                averageHR: slice.isEmpty ? nil : slice.reduce(0) { $0 + $1.bpm } / Double(slice.count)
+            )
+            workout.strain = StrainEngine.workoutStrain(workout: workout, daySamples: samples, restingHR: record?.restingHR, config: strainConfig)
+            list.append(workout)
+        }
+        return list.sorted { $0.start < $1.start }
+    }
+
     // MARK: - Stress
 
     /// Stress-Verlauf (0–3) für einen Tag aus der Intraday-HF.

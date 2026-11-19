@@ -683,17 +683,24 @@ enum DashboardView {
 
 // MARK: - Aktivitäten (My Day)
 
-/// Liste der Aktivitäten des Tages: Schlaf und Workouts mit Startzeit und Ende.
+/// Aktivitäten des Tages: Schlaf, Workouts (Google und selbst erfasst), laufende
+/// und geplante Aktivitäten, dazu Buttons zum Nachtragen und Starten.
 struct ActivitiesCard: View {
     @Environment(AppModel.self) private var model
+    @State private var sheet: ActivitySheetMode?
+    @State private var pendingAction: LoggedActivity?
 
     var body: some View {
+        let key = model.selectedDayKey
         let record = model.selectedRecord
         let sleep = record?.mainSleep
-        let workouts = (record?.workouts ?? []).sorted { $0.start < $1.start }
+        let workouts = model.allWorkouts(for: key)
+        let logged = model.loggedActivities(for: key)
+        let active = logged.filter(\.isActive)
+        let planned = logged.filter(\.isPlanned)
 
         VStack(alignment: .leading, spacing: 10) {
-            CapsLabel(text: "Activities", size: 13)
+            CapsLabel(text: key == DayKey.today() ? "Today\u{2019}s activities" : "Activities", size: 13)
                 .padding(.horizontal, 6)
                 .padding(.bottom, 4)
 
@@ -701,80 +708,179 @@ struct ActivitiesCard: View {
                 NavigationLink {
                     SleepDetailView()
                 } label: {
-                    row(
-                        pillColor: Theme.sleepPurple,
-                        symbol: "moon.fill",
-                        pillText: Fmt.hm(sleep.minutesAsleep),
-                        name: "Sleep",
-                        start: sleep.start,
-                        end: sleep.end,
-                        showDay: !Calendar.current.isDate(sleep.start, inSameDayAs: sleep.end)
-                    )
+                    row(pill: filledPill(color: Theme.sleepPurple, symbol: "moon.fill", text: Fmt.hm(sleep.minutesAsleep)),
+                        name: "Sleep", trailing: AnyView(times(sleep.start, sleep.end, showDay: !Calendar.current.isDate(sleep.start, inSameDayAs: sleep.end), color: Theme.sleepPurple)))
                 }
                 .buttonStyle(.plain)
             }
+
             ForEach(workouts, id: \.id) { workout in
                 NavigationLink {
                     StrainDetailView()
                 } label: {
-                    row(
-                        pillColor: Theme.strainBlue,
-                        symbol: workoutSymbol(workout.name),
-                        pillText: workout.strain.map { String(format: "%.1f", $0) } ?? "–",
-                        name: workout.name,
-                        start: workout.start,
-                        end: workout.end,
-                        showDay: false
-                    )
+                    row(pill: filledPill(color: Theme.strainBlue, symbol: ActivityCatalog.symbol(for: workout.name),
+                                         text: workout.strain.map { String(format: "%.1f", $0) } ?? "–"),
+                        name: workout.name, trailing: AnyView(times(workout.start, workout.end, showDay: false, color: Theme.strainBlue)))
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    if workout.id.hasPrefix("log-"), let id = UUID(uuidString: String(workout.id.dropFirst(4))) {
+                        Button(role: .destructive) {
+                            model.deleteActivity(id, on: key)
+                        } label: {
+                            Label("Delete activity", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+
+            ForEach(active) { activity in
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let elapsed = context.date.timeIntervalSince(activity.start ?? context.date)
+                    row(pill: filledPill(color: Theme.green, symbol: ActivityCatalog.symbol(for: activity.type), text: clock(elapsed)),
+                        name: activity.type,
+                        trailing: AnyView(
+                            Button {
+                                model.stopActivity(activity.id, on: key)
+                            } label: {
+                                Text("STOP")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .kerning(1)
+                                    .foregroundStyle(Color.black)
+                                    .padding(.horizontal, 14)
+                                    .frame(height: 32)
+                                    .background(Capsule().fill(Color.white))
+                            }
+                            .buttonStyle(.plain)
+                        ))
+                }
+            }
+
+            ForEach(planned) { activity in
+                Button {
+                    pendingAction = activity
+                } label: {
+                    row(pill: outlinePill(symbol: ActivityCatalog.symbol(for: activity.type)),
+                        name: activity.type,
+                        trailing: AnyView(
+                            Text("Pending")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.trailing, 8)
+                        ))
                 }
                 .buttonStyle(.plain)
             }
-            if sleep == nil && workouts.isEmpty {
-                Text("No activities recorded yet.")
+
+            if sleep == nil && workouts.isEmpty && logged.isEmpty {
+                Text("No activities yet.")
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.textSecondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
             }
+
+            HStack(spacing: 10) {
+                actionButton("Add activity", symbol: "plus") { sheet = .add }
+                actionButton("Start activity", symbol: "stopwatch") { sheet = .start }
+            }
+            .padding(.top, 6)
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card))
+        .sheet(item: $sheet) { mode in
+            ActivityPickerSheet(mode: mode)
+        }
+        .confirmationDialog(pendingAction?.type ?? "", isPresented: Binding(
+            get: { pendingAction != nil },
+            set: { if !$0 { pendingAction = nil } }
+        ), titleVisibility: .visible) {
+            if let activity = pendingAction {
+                Button("Start now") { model.startPlanned(activity.id, on: key) }
+                Button("Remove", role: .destructive) { model.deleteActivity(activity.id, on: key) }
+            }
+        }
     }
 
-    private func row(pillColor: Color, symbol: String, pillText: String, name: String, start: Date, end: Date, showDay: Bool) -> some View {
-        HStack(spacing: 12) {
+    private func clock(_ seconds: TimeInterval) -> String {
+        let s = max(0, Int(seconds))
+        return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s % 3600 / 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    private func filledPill(color: Color, symbol: String, text: String) -> AnyView {
+        AnyView(
             HStack(spacing: 8) {
                 Image(systemName: symbol)
                     .font(.system(size: 17, weight: .semibold))
-                Text(pillText)
+                Text(text)
                     .font(.system(size: 19, weight: .bold).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundStyle(Color.white)
             .frame(width: 96, height: 46)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(pillColor))
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color))
+        )
+    }
 
-            Text(name.uppercased())
-                .font(.system(size: 14, weight: .bold))
-                .kerning(1)
-                .foregroundStyle(Theme.textPrimary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+    private func outlinePill(symbol: String) -> AnyView {
+        AnyView(
+            Image(systemName: symbol)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .frame(width: 96, height: 46)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.black.opacity(0.35)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.black.opacity(0.8), lineWidth: 2))
+        )
+    }
 
-            Spacer(minLength: 4)
-
+    private func times(_ start: Date, _ end: Date, showDay: Bool, color: Color) -> some View {
+        HStack(spacing: 12) {
             VStack(alignment: .trailing, spacing: 2) {
                 Text((showDay ? "[\(start.formatted(.dateTime.weekday(.abbreviated)))] " : "") + Fmt.clock(start))
                 Text(Fmt.clock(end))
             }
             .font(.system(size: 13).monospacedDigit())
             .foregroundStyle(Theme.textSecondary)
-
             Capsule()
-                .fill(pillColor)
+                .fill(color)
                 .frame(width: 3, height: 32)
+        }
+    }
+
+    private func row(pill: AnyView, name: String, trailing: AnyView) -> some View {
+        HStack(spacing: 12) {
+            pill
+            Text(name.uppercased())
+                .font(.system(size: 14, weight: .bold))
+                .kerning(1)
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 4)
+            trailing
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.cardElevated.opacity(0.6)))
+    }
+
+    private func actionButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.system(size: 15, weight: .semibold))
+                Text(title.uppercased())
+                    .font(.system(size: 13, weight: .bold))
+                    .kerning(1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(Theme.textPrimary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.cardElevated.opacity(0.6)))
+        }
+        .buttonStyle(.plain)
     }
 }
 
