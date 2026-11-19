@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// Jahresrückblick: Bestwerte des laufenden Jahres, geöffnet über die Serie oben links.
+/// Rückblick: Bestwerte aller Tage, geöffnet über die Serie oben links.
 struct YearReviewView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-
-    private let year = Calendar.current.component(.year, from: Date())
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -17,7 +15,7 @@ struct YearReviewView: View {
             .ignoresSafeArea()
 
             DeepDiveScroll {
-                YearReviewCard(stats: YearStats(model: model, year: year), year: year)
+                YearReviewCard(stats: YearStats(model: model))
                     .padding(.bottom, 30)
             }
 
@@ -40,7 +38,7 @@ struct YearReviewView: View {
 
 // MARK: - Kennzahlen
 
-/// Bestwerte eines Kalenderjahres aus allen gespeicherten Tagen.
+/// Bestwerte aus allen gespeicherten Tagen.
 struct YearStats {
     struct Best {
         let value: Double
@@ -62,9 +60,8 @@ struct YearStats {
     var workouts = 0
 
     @MainActor
-    init(model: AppModel, year: Int) {
-        let prefix = "\(year)-"
-        let keys = model.store.sortedKeys.filter { $0.hasPrefix(prefix) }
+    init(model: AppModel) {
+        let keys = model.store.sortedKeys
 
         var recoveries: [Double] = []
         var sleeps: [Double] = []
@@ -120,7 +117,6 @@ struct YearStats {
 
 struct YearReviewCard: View {
     let stats: YearStats
-    let year: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -131,7 +127,7 @@ struct YearReviewCard: View {
                             .font(.system(size: 24, weight: .light))
                             .kerning(4)
                             .foregroundStyle(Theme.textPrimary)
-                        Text(String(year))
+                        Text("ALL TIME")
                             .font(.system(size: 24, weight: .semibold).italic())
                             .foregroundStyle(
                                 LinearGradient(colors: [Color(hex: 0x8C7CF0), Color(hex: 0x3D8BFF)], startPoint: .leading, endPoint: .trailing)
@@ -149,7 +145,7 @@ struct YearReviewCard: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Your")
-                        Text("Year in Review")
+                        Text("All-Time Review")
                     }
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
@@ -207,7 +203,7 @@ struct YearReviewCard: View {
     }
 
     private func dateText(_ key: String) -> String {
-        (DayKey.date(from: key) ?? Date()).formatted(.dateTime.month(.abbreviated).day())
+        (DayKey.date(from: key) ?? Date()).formatted(.dateTime.month(.abbreviated).day().year())
     }
 
     private func headlineStat(symbol: String, title: String, value: String) -> some View {
