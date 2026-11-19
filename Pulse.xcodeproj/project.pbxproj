@@ -44,6 +44,7 @@
 		D5BECFFBF93D3F8D5F5AC10C /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9FC82DCD4912AC0B64BA6B /* AppModel.swift */; };
 		D8E7B10D0D41F1A632F600AE /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82ED349698202E45F3883205 /* NotificationManager.swift */; };
 		DCD6475CDAA4486534D693E7 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3198D4F823C6CD532863510E /* DashboardView.swift */; };
+		A1B2C3D4E5F6071829304050 /* YearReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304051 /* YearReviewView.swift */; };
 		D9B94B53E983CEEE5B4F1C1E /* ActivityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A41FF9AEA3262D480180C150 /* ActivityViews.swift */; };
 		F6C82F2B200AB78189CB467C /* DetailKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D09F242F3E635B2FBD5231 /* DetailKit.swift */; };
 		B0BD4C550A054DB67D4F181E /* StressDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76B61A43EAAA3D6C9C2C36C /* StressDetailView.swift */; };
@@ -103,6 +104,7 @@
 		3131905506688A1135561139 /* DashboardCustomize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCustomize.swift; sourceTree = "<group>"; };
 		315207469E6BFA6F5FCD2B24 /* WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridge.swift; sourceTree = "<group>"; };
 		3198D4F823C6CD532863510E /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6071829304051 /* YearReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearReviewView.swift; sourceTree = "<group>"; };
 		A41FF9AEA3262D480180C150 /* ActivityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityViews.swift; sourceTree = "<group>"; };
 		B0D09F242F3E635B2FBD5231 /* DetailKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailKit.swift; sourceTree = "<group>"; };
 		A76B61A43EAAA3D6C9C2C36C /* StressDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressDetailView.swift; sourceTree = "<group>"; };
@@ -251,6 +253,7 @@
 				F231EA7C76B1EDAF59639639 /* Components.swift */,
 				3131905506688A1135561139 /* DashboardCustomize.swift */,
 				3198D4F823C6CD532863510E /* DashboardView.swift */,
+				A1B2C3D4E5F6071829304051 /* YearReviewView.swift */,
 				A41FF9AEA3262D480180C150 /* ActivityViews.swift */,
 				B0D09F242F3E635B2FBD5231 /* DetailKit.swift */,
 				A76B61A43EAAA3D6C9C2C36C /* StressDetailView.swift */,
@@ -395,6 +398,7 @@
 				110651CAE6A100737CD218BF /* Components.swift in Sources */,
 				BBF3625290CAFE7C5AF8F0EA /* DashboardCustomize.swift in Sources */,
 				DCD6475CDAA4486534D693E7 /* DashboardView.swift in Sources */,
+				A1B2C3D4E5F6071829304050 /* YearReviewView.swift in Sources */,
 				D9B94B53E983CEEE5B4F1C1E /* ActivityViews.swift in Sources */,
 				F6C82F2B200AB78189CB467C /* DetailKit.swift in Sources */,
 				B0BD4C550A054DB67D4F181E /* StressDetailView.swift in Sources */,

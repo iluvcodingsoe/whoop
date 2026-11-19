@@ -6,7 +6,7 @@ name: screenshots
 
 on:
   push:
-    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget, health-tiles]
+    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget, health-tiles, year-review]
   workflow_dispatch:
 
 permissions:
@@ -72,6 +72,9 @@ jobs:
           shoot 1-health -screenshotTab health
           shoot 2-health-bottom -screenshotTab health -screenshotScroll
           shoot 3-journal-bottom -screenshotTab journal -screenshotScroll
+          shoot 4-year -screenshotTab home -screenshotPage year
+          shoot 5-year -screenshotTab home -screenshotPage year
+          shoot 6-year-bottom -screenshotTab home -screenshotPage year -screenshotSection rows
           ls -la shots
           # Absturzberichte mitnehmen, falls die App nicht startet.
           find ~/Library/Logs/DiagnosticReports -name "Pulse*" -newer build.log -exec cp {} shots/ \; 2>/dev/null || true
