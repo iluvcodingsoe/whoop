@@ -26,6 +26,7 @@ final class AppModel {
         static let weightKg = "profile.weightKg"
         static let maxHR = "calc.maxHROverride"
         static let lastSync = "sync.lastSyncAt"
+        static let backfilledDays = "sync.backfilledDays"
         static let notifications = "notify.enabled"
         static let connectedAt = "auth.connectedAt"
         static let moduleOrder = "dashboard.moduleOrder"
@@ -759,6 +760,21 @@ final class AppModel {
         }
     }
 
+    /// Days to fetch on a normal sync: the full range once, then only the
+    /// days since the last sync plus a small overlap for late-arriving data.
+    private func incrementalDaysBack() -> Int {
+        let backfilled = defaults.integer(forKey: Keys.backfilledDays)
+        guard let lastSyncAt, !store.days.isEmpty, backfilled >= daysBack else { return daysBack }
+        let since = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: lastSyncAt), to: Date()).day ?? daysBack
+        return min(daysBack, max(3, since + 3))
+    }
+
+    /// Fetches the whole backfill range again.
+    func fullResync() async {
+        defaults.removeObject(forKey: Keys.backfilledDays)
+        await syncNow()
+    }
+
     func syncNow(daysBackOverride: Int? = nil, hrDaysBackOverride: Int? = nil) async {
         guard !syncing else { return }
         guard isConnected else {
@@ -789,10 +805,13 @@ final class AppModel {
         let client = HealthAPIClient(auth: auth, config: oauthConfig)
         let engine = SyncEngine(client: client)
 
+        let windowDays = daysBackOverride ?? incrementalDaysBack()
+        let isFullBackfill = windowDays >= daysBack
+
         // Phase 1: alle Tagesmetriken — danach sofort speichern und anzeigen.
         let daily = await engine.syncDailyMetrics(
             existingDays: store.days,
-            daysBack: daysBackOverride ?? daysBack
+            daysBack: windowDays
         ) { [weak self] progress in
             Task { @MainActor in
                 self?.syncMessage = progress.message
@@ -823,6 +842,9 @@ final class AppModel {
         store.save()
         syncLog = daily.log + hr.log
         lastSyncAt = Date()
+        if isFullBackfill, !daily.hadErrors {
+            defaults.set(daysBack, forKey: Keys.backfilledDays)
+        }
         recomputeAll()
 
         if daily.hadErrors || hr.hadErrors {
@@ -846,6 +868,7 @@ final class AppModel {
         dailyLogs.wipe()
         syncLog = []
         lastSyncAt = nil
+        defaults.removeObject(forKey: Keys.backfilledDays)
         connectedAt = nil
         demoMode = false
         onboarded = false

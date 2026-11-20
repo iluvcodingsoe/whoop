@@ -92,6 +92,11 @@ struct SettingsView: View {
             }
             .disabled(!model.isConnected || model.syncing)
 
+            Button(model.loc("Alles neu laden", "Reload full range")) {
+                Task { await model.fullResync() }
+            }
+            .disabled(!model.isConnected || model.syncing)
+
             if let lastSync = model.lastSyncAt {
                 LabeledContent(model.loc("Letzter Sync", "Last sync"), value: Fmt.relative(lastSync))
             }
