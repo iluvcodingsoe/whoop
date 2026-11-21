@@ -1,0 +1,200 @@
+2026-11-21 12:43:13.373 A  Pulse[25341:125f0] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:43:13.534 A  Pulse[25341:1253e] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:43:14.491 Df Pulse[25341:11d80] [com.apple.runningboard:connection] Creating side-channel connection to com.apple.runningboard
+2026-11-21 12:43:14.491 Df Pulse[25341:11d80] [com.apple.xpc:connection] [0x1086c1320] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-11-21 12:43:14.493 Df Pulse[25341:11d80] [com.apple.runningboard:process] Hit the server for a process handle 8319338000062fd that resolved to: [app<net.dehlwes.pulse((null))>:25341]
+2026-11-21 12:43:14.677 Df Pulse[25341:11d80] [com.apple.UIKit:UpdateScheduler] Target list changed: <CADisplay:LCD PurpleMain>
+2026-11-21 12:43:14.730 Df Pulse[25341:11d80] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:net.dehlwes.pulse-default  persistentID: 7DC241AE-F259-4878-81AC-C8B88E58E347
+2026-11-21 12:43:14.734 Df Pulse[25341:11d80] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x108618660> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:43:14.734 Df Pulse[25341:11d80] [com.apple.BackgroundTasks:Framework] Handling app launch
+2026-11-21 12:43:14.736 Df Pulse[25341:11d80] [com.apple.Accessibility:AXCommon] Read Per-App on Init: Smart invert = (null)
+2026-11-21 12:43:14.752 Df Pulse[25341:11d80] [com.apple.UIKit:EventDeferring] [0x600002903a30] Scene target of event deferring environments did update: scene: 0x108618660; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-11-21 12:43:14.754 Df Pulse[25341:11d80] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x108618660; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Anet.dehlwes.pulse-default
+2026-11-21 12:43:14.776 Df Pulse[25341:11d80] [com.apple.FrontBoard:SceneExtension] Realizing settings extension SBUISecureRenderingSettingsExtension on FBSSceneSettings
+2026-11-21 12:43:15.035 Df Pulse[25341:11d80] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x108618660> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:43:15.035 Df Pulse[25341:11d80] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x108618660> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:43:15.037 Df Pulse[25341:11d80] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:net.dehlwes.pulse-default  persistentID: 7DC241AE-F259-4878-81AC-C8B88E58E347
+2026-11-21 12:43:15.038 Df Pulse[25341:11d80] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4128 -> 32; animating application lifecycle event: 1
+2026-11-21 12:43:15.039 Df Pulse[25341:11d80] [com.apple.KeyboardArbiter:Client] Send setDeactivating: N (-DeactivationReason:SuspendedEventsOnly)
+2026-11-21 12:43:15.044 Df Pulse[25341:11d80] [com.apple.UIKit:Application] Deactivation reason removed: 5; deactivation reasons: 32 -> 0; animating application lifecycle event: 0
+2026-11-21 12:43:15.046 Df Pulse[25341:11d80] [com.apple.UIKit:InterfaceStyle] Scene did update interface style to 1, <UIWindowScene: 0x108618660> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:43:15.047 Df Pulse[25341:11d80] [com.apple.UIKit:InterfaceStyle] Push traits update to screen for new style 1, <UIWindowScene: 0x108618660> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:43:15.764 Df Pulse[25341:11d80] [com.apple.KeyboardArbiter:Client] startConnection
+2026-11-21 12:43:15.766 Df Pulse[25341:11d80] [com.apple.xpc:connection] [0x1091a3240] activating connection: mach=true listener=false peer=false name=com.apple.UIKit.KeyboardManagement.hosted
+2026-11-21 12:43:15.786 Df Pulse[25341:11d80] [com.apple.KeyboardArbiter:Client] handleKeyboardChange: set currentKeyboard:N (wasKeyboard:N)
+2026-11-21 12:43:15.795 Df Pulse[25341:11d80] [com.apple.UIKit:KeyboardArbiterClientLog] isWritingToolsHandlingKeyboardTracking:Y (WT ready:Y, Arbiter ready:Y)
+2026-11-21 12:43:15.837 Df Pulse[25341:11d80] [com.apple.network:activity] <nw_activity 50:1 [FD22E28F-98AC-4490-9604-2D11D7A580EE] (global parent) (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 35971ms
+2026-11-21 12:43:15.837 Df Pulse[25341:11d80] [com.apple.network:activity] <nw_activity 50:2 [128E7C7C-A9AE-4C9B-A92A-8A8AEA7F8E2E] (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 35971ms
+2026-11-21 12:43:15.837 Df Pulse[25341:11d80] [com.apple.network:activity] Unsetting the global parent activity <nw_activity 50:1 [FD22E28F-98AC-4490-9604-2D11D7A580EE] (global parent) (reporting strategy default) complete (reason success)>
+2026-11-21 12:43:15.837 Df Pulse[25341:11d80] [com.apple.network:activity] Unset the global parent activity
+2026-11-21 12:43:15.838 E  Pulse[25341:1253e] [com.apple.app_launch_measurement:General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+2026-11-21 12:43:25.539 A  Pulse[25341:1252d] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:43:39.529 Df Pulse[27234:12f25] [com.apple.network:] networkd_settings_read_from_file initialized networkd settings by reading plist directly
+2026-11-21 12:43:39.531 Df Pulse[27234:12f25] [com.apple.network:] networkd_settings_read_from_file initialized networkd settings by reading plist directly
+2026-11-21 12:43:39.542 Df Pulse[27234:12f25] [com.apple.xpc:connection] [0x107c04300] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+2026-11-21 12:43:39.552 Df Pulse[27234:12f25] [com.apple.securityd:SecWarning] SecTaskLoadEntitlements failed error=22 cs_flags=200, pid=27234 task=Pulse[27234]/0#-1 LF=22
+2026-11-21 12:43:39.554 A  Pulse[27234:12f25] (Security) SecItemCopyMatching_ios
+2026-11-21 12:43:39.555 Df Pulse[27234:12f25] [com.apple.securityd:secitemratelimit] Not internal release, disabling SIRL
+2026-11-21 12:43:39.556 Df Pulse[27234:12f25] [com.apple.securityd:thread-local-client-debug] SecSecurityClientGet new thread!
+2026-11-21 12:43:39.558 Df Pulse[27234:12f25] [com.apple.securityd:keychain] System Keychain Always Supported set via feature flag to disabled
+2026-11-21 12:43:39.559 Df Pulse[27234:12f25] [com.apple.xpc:connection] [0x107e04570] activating connection: mach=true listener=false peer=false name=com.apple.securityd
+2026-11-21 12:43:44.144 A  Pulse[27234:12f25] (libsystem_containermanager.dylib) container_create_or_lookup_app_group_path_by_app_group_identifier
+2026-11-21 12:43:44.144 Df Pulse[27234:12f25] [com.apple.containermanager:xpc] Requesting app group container lookup; identifier = group.net.dehlwes.pulse, euid = 501, uid = 501, platform = 7
+2026-11-21 12:43:44.146 E  Pulse[27234:12f25] [com.apple.containermanager:unspecified] container_create_or_lookup_app_group_path_by_app_group_identifier: error = ((container_error_t)98) NOT_CODESIGNED
+2026-11-21 12:43:44.151 Df Pulse[27234:12f25] [com.apple.chrono:widget] Creating WidgetCenter connection.
+2026-11-21 12:43:44.160 Df Pulse[27234:12f25] [com.apple.xpc:connection] [0x10790ad90] activating connection: mach=true listener=false peer=false name=com.apple.chrono.widgetcenterconnection
+2026-11-21 12:43:44.181 Df Pulse[27234:1300b] [com.apple.chrono:widget] reloadAllTimelines() - reloaded all timelines
+2026-11-21 12:43:48.418 Df Pulse[27234:13306] [com.apple.chrono:widget] reloadAllTimelines() - reloaded all timelines
+2026-11-21 12:43:53.293 Df Pulse[27234:13306] [com.apple.chrono:widget] reloadAllTimelines() - reloaded all timelines
+2026-11-21 12:43:58.592 Df Pulse[27234:13306] [com.apple.chrono:widget] reloadAllTimelines() - reloaded all timelines
+2026-11-21 12:44:04.639 Df Pulse[27234:13306] [com.apple.chrono:widget] reloadAllTimelines() - reloaded all timelines
+2026-11-21 12:44:05.275 Df Pulse[27234:12f25] [com.apple.securityd:SecWarning] SecTaskLoadEntitlements failed error=22 cs_flags=200, pid=27234 task=Pulse[27234]/0#-1 LF=22
+2026-11-21 12:44:05.279 Df Pulse[27234:13306] [com.apple.BoardServices:XPCErrors] [C:1] Alloc com.apple.frontboard.systemappservices
+2026-11-21 12:44:05.280 Df Pulse[27234:13306] [com.apple.xpc:connection] [0x107c12020] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-11-21 12:44:05.308 Df Pulse[27234:12f25] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x107c12160> for initial
+2026-11-21 12:44:05.309 Df Pulse[27234:12f25] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x107c12160> for CADisplay KVO
+2026-11-21 12:44:05.314 Df Pulse[27234:12f25] (libMobileGestalt.dylib) No persisted cache on this platform.
+2026-11-21 12:44:05.316 Df Pulse[27234:12f25] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 1, category name = (null)
+2026-11-21 12:44:05.317 Df Pulse[27234:12f25] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 0, category name = (null)
+2026-11-21 12:44:05.334 Df Pulse[27234:12f25] [com.apple.runningboard:connection] Initializing connection
+2026-11-21 12:44:05.334 Df Pulse[27234:12f25] [com.apple.runningboard:process] Removing all cached process handles
+2026-11-21 12:44:05.334 Df Pulse[27234:138fc] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+2026-11-21 12:44:05.334 Df Pulse[27234:138fc] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+2026-11-21 12:44:05.334 Df Pulse[27234:138fc] [com.apple.xpc:connection] [0x10790b360] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-11-21 12:44:05.337 A  Pulse[27234:13306] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:44:05.340 Df Pulse[27234:138fc] [com.apple.runningboard:connection] Handshake succeeded
+2026-11-21 12:44:05.340 Df Pulse[27234:138fc] [com.apple.runningboard:connection] Identity resolved as app<net.dehlwes.pulse((null))>
+2026-11-21 12:44:05.343 A  Pulse[27234:13306] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2026-11-21 12:44:05.345 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-11-21 12:44:05.345 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-11-21 12:44:05.346 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x600002102710>
+2026-11-21 12:44:05.347 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002102710>
+2026-11-21 12:44:05.348 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x6000019ddec0>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 1571 (elapsed = 0).
+2026-11-21 12:44:05.348 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UIApplicationSceneKeyboardSettings on FBSSceneSettings
+2026-11-21 12:44:05.351 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneOcclusionSettings> on FBSSceneSettings
+2026-11-21 12:44:05.354 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneInterfaceProtectionSettings> on FBSSceneSettings
+2026-11-21 12:44:05.356 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneLayoutPreferencesHostSettingsExtension on FBSSceneSettings
+2026-11-21 12:44:05.357 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneSafeAreaSettingsExtension on FBSSceneSettings
+2026-11-21 12:44:05.359 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneLayoutPreferenceClientSettingsExtension on FBSSceneClientSettings
+2026-11-21 12:44:05.361 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIHomeAffordanceHostSceneSettings> on FBSSceneSettings
+2026-11-21 12:44:05.362 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISystemShellSceneHostingEnvironmentSettings on FBSSceneSettings
+2026-11-21 12:44:05.363 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneRenderingEnvironmentSettings on FBSSceneSettings
+2026-11-21 12:44:05.364 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneRenderingEnvironmentClientSettings> on FBSSceneClientSettings
+2026-11-21 12:44:05.364 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneTransitioningHostSettings> on FBSSceneSettings
+2026-11-21 12:44:05.365 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneFocusSystemSettings> on FBSSceneSettings
+2026-11-21 12:44:05.365 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneOrientationSettingsExtension on FBSSceneSettings
+2026-11-21 12:44:05.366 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneOrientationClientSettingsExtension on FBSSceneClientSettings
+2026-11-21 12:44:05.366 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneWindowingControlClientSettings on FBSSceneClientSettings
+2026-11-21 12:44:05.367 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingContentSizePreferenceClientSettings> on FBSSceneClientSettings
+2026-11-21 12:44:05.368 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneHostingTraitCollectionPropagationSettings on FBSSceneSettings
+2026-11-21 12:44:05.370 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationSettings> on FBSSceneSettings
+2026-11-21 12:44:05.371 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason added: 10; deactivation reasons: 0 -> 1024; animating application lifecycle event: 0
+2026-11-21 12:44:05.371 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationClientSettings> on FBSSceneClientSettings
+2026-11-21 12:44:05.372 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingEventDeferringSettings> on FBSSceneSettings
+2026-11-21 12:44:05.372 Df Pulse[27234:12f25] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.open
+2026-11-21 12:44:05.373 Df Pulse[27234:12f25] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.workspace-service
+2026-11-21 12:44:05.373 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneSettings
+2026-11-21 12:44:05.374 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneClientSettings
+2026-11-21 12:44:05.374 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingViewControllerPreferencePropagationClientSettings> on FBSSceneClientSettings
+2026-11-21 12:44:05.375 Df Pulse[27234:12f25] [com.apple.FrontBoard:Common] FBSWorkspace registering source: com.apple.frontboard.systemappservices
+2026-11-21 12:44:05.375 Df Pulse[27234:138fc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneZoomTransitionSettings> on FBSSceneSettings
+2026-11-21 12:44:05.379 Df Pulse[27234:12f25] [com.apple.FrontBoard:Common] FBSWorkspace connected to endpoint : <BSServiceConnectionEndpoint: 0x6000002e1ce0; target: com.apple.frontboard.systemappservices; service: com.apple.frontboard.workspace-service>
+2026-11-21 12:44:05.379 Df Pulse[27234:12f25] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x600003000630 com.apple.frontboard.systemappservices> attempting immediate handshake from activate
+2026-11-21 12:44:05.381 Df Pulse[27234:12f25] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x600003000630 com.apple.frontboard.systemappservices> sent handshake
+2026-11-21 12:44:05.385 Df Pulse[27234:13906] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneSettingsCore on FBSSceneSettings
+2026-11-21 12:44:05.388 Df Pulse[27234:13906] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneClientSettingsCore on FBSSceneClientSettings
+2026-11-21 12:44:05.389 Df Pulse[27234:12f25] [com.apple.runningboard:general] Added observer for process assertions expiration warning: <_RBSExpirationWarningClient: 0x6000002e2de0>
+2026-11-21 12:44:05.404 Df Pulse[27234:13906] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneSettings setting counterpart class: UIApplicationSceneSettings
+2026-11-21 12:44:05.405 Df Pulse[27234:12f25] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+2026-11-21 12:44:05.406 Df Pulse[27234:13906] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneClientSettings setting counterpart class: UIApplicationSceneClientSettings
+2026-11-21 12:44:05.406 Df Pulse[27234:13906] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneTransitionContextCore on FBSSceneTransitionContext
+2026-11-21 12:44:05.407 Df Pulse[27234:12f25] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-11-21 12:44:05.407 Df Pulse[27234:12f25] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-11-21 12:44:05.408 Df Pulse[27234:12f25] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-11-21 12:44:05.410 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason added: 11; deactivation reasons: 1024 -> 3072; animating application lifecycle event: 0
+2026-11-21 12:44:05.418 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason removed: 10; deactivation reasons: 3072 -> 2048; animating application lifecycle event: 0
+2026-11-21 12:44:05.422 Df Pulse[27234:12f25] [com.apple.UIKit:EventBus] Event Timing Profile for Touch: not found, path="/System/Library/EventTimingProfiles/Sim.Touch.plist"
+2026-11-21 12:44:05.422 Df Pulse[27234:12f25] [com.apple.UIKit:EventBus] Event Timing Profile for Pencil: not found, path="/System/Library/EventTimingProfiles/Sim.Pencil.plist"
+2026-11-21 12:44:05.422 Df Pulse[27234:12f25] [com.apple.UIKit:UpdateScheduler] Selected display: name=LCD (PurpleMain), id=1
+2026-11-21 12:44:05.429 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason added: 5; deactivation reasons: 2048 -> 2080; animating application lifecycle event: 1
+2026-11-21 12:44:05.430 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Should send trait collection or coordinate space update, interface style 2 -> 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.434 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.434 Df Pulse[27234:12f25] [com.apple.UIKit:HomeAffordanceObservation] Initializing: <_UIHomeAffordanceSceneNotifier: 0x600002901500>; with scene: <UIWindowScene: 0x107e276f0>
+2026-11-21 12:44:05.434 Df Pulse[27234:12f25] [com.apple.BacklightServices:scenes] 0x600000c77cf0 setDelegate:<0x600000c77f00 _UIBacklightEnvironment> hasDelegate:YES for environment:sceneID:net.dehlwes.pulse-default
+2026-11-21 12:44:05.436 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.436 Df Pulse[27234:12f25] [com.apple.UIKit:EventDeferring] [0x6000029012d0] Initialized with scene: <UIWindowScene: 0x107e276f0>; behavior: <_UIEventDeferringBehavior_iOS: 0x6000002dac80>; availableForProcess: 1, systemShellManagesKeyboardFocus: 1
+2026-11-21 12:44:05.437 Df Pulse[27234:12f25] [com.apple.BoardServices:XPCErrors] [C:2] Alloc com.apple.backboard.hid-services.xpc
+2026-11-21 12:44:05.437 Df Pulse[27234:12f25] [com.apple.xpc:connection] [0x107c26c50] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-11-21 12:44:05.442 Df Pulse[27234:13306] [com.apple.BackBoard:EventDelivery] BKSHIDEventObserver - connection activation
+2026-11-21 12:44:05.442 Df Pulse[27234:12f25] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x600002608600; process scope; status: target> was:none
+2026-11-21 12:44:05.442 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to LastOneWins
+2026-11-21 12:44:05.442 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Scene target of keyboard event deferring environment did change: 1; scene: UIWindowScene: 0x107e276f0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Anet.dehlwes.pulse-default
+2026-11-21 12:44:05.443 Df Pulse[27234:12f25] [com.apple.UIKit:EventDeferring] [0x6000029012d0] Scene target of event deferring environments did update: scene: 0x107e276f0; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-11-21 12:44:05.443 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x107e276f0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Anet.dehlwes.pulse-default
+2026-11-21 12:44:05.443 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Stack[KeyWindow] 0x600000c7eca0: Taking no further action for migration from LastOneWins -> SystemShellManaged as there are no scenes
+2026-11-21 12:44:05.443 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to SystemShellManaged
+2026-11-21 12:44:05.443 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Key window needs update: 0; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x107e276f0; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x0; reason: UIWindowScene: 0x107e276f0: Window scene became target of keyboard environment
+2026-11-21 12:44:05.471 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.505 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.870 Df Pulse[27234:12f25] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIApplicationSceneDisplaySettings> on FBSSceneSettings
+2026-11-21 12:44:05.900 Df Pulse[27234:12f25] [com.apple.UIKit:Orientation] <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347) Scene updated orientation preferences: none -> ( Pu )
+2026-11-21 12:44:05.901 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Key window API is scene-level: YES
+2026-11-21 12:44:05.901 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] UIWindowScene: 0x107e276f0: Window became key in scene: UIWindow: 0x107d1a9f0; contextId: 0x8B50E21: reason: UIWindowScene: 0x107e276f0: Window requested to become key in scene: 0x107d1a9f0
+2026-11-21 12:44:05.901 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Key window needs update: 1; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x107e276f0; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x107d1a9f0; reason: UIWindowScene: 0x107e276f0: Window requested to become key in scene: 0x107d1a9f0
+2026-11-21 12:44:05.901 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Window did become application key: UIWindow: 0x107d1a9f0; contextId: 0x8B50E21; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Anet.dehlwes.pulse-default
+2026-11-21 12:44:05.901 Df Pulse[27234:12f25] [com.apple.UIKit:EventDeferring] [0x6000029012d0] Begin local event deferring requested for token: 0x60000260c4e0; environments: 1; reason: UIWindowScene: 0x107e276f0: Begin event deferring in keyboardFocus for window: 0x107d1a9f0
+2026-11-21 12:44:05.903 Df Pulse[27234:138fc] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
+2026-11-21 12:44:05.907 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.909 Df Pulse[27234:12f25] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:net.dehlwes.pulse-default  persistentID: 7DC241AE-F259-4878-81AC-C8B88E58E347
+2026-11-21 12:44:05.909 Df Pulse[27234:138fc] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x600002608600; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Anet.dehlwes.pulse-default; status: ancestor> was:target
+2026-11-21 12:44:05.910 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Ignoring already applied deactivation reason: 5; deactivation reasons: 2080
+2026-11-21 12:44:05.910 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason added: 12; deactivation reasons: 2080 -> 6176; animating application lifecycle event: 1
+2026-11-21 12:44:05.910 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason removed: 11; deactivation reasons: 6176 -> 4128; animating application lifecycle event: 1
+2026-11-21 12:44:05.911 Df Pulse[27234:12f25] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneIntelligenceSupportSettings> on FBSSceneSettings
+2026-11-21 12:44:05.913 Df Pulse[27234:138fc] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2026-11-21 12:44:05.913 Df Pulse[27234:138fc] [com.apple.xpc:session] [0x600002117070] Session created.
+2026-11-21 12:44:05.913 Df Pulse[27234:138fc] [com.apple.xpc:session] [0x600002117070] Session created from connection [0x107914710]
+2026-11-21 12:44:05.913 Df Pulse[27234:138fc] [com.apple.xpc:connection] [0x107914710] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2026-11-21 12:44:05.914 Df Pulse[27234:138fc] [com.apple.xpc:session] [0x600002117070] Session activated
+2026-11-21 12:44:05.914 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:05.925 A  Pulse[27234:12f25] (CoreFoundation) Updating Key-Value Observers Of Preferences
+2026-11-21 12:44:06.251 Df Pulse[27234:12f25] [com.apple.UIKit:_UIVisualStyleRegistry] Warning: no visual style classes have been registered at all.
+2026-11-21 12:44:06.327 Df Pulse[27234:138fc] [com.apple.xpc:connection] [0x107c24e80] activating connection: mach=true listener=false peer=false name=com.apple.fontservicesd
+2026-11-21 12:44:06.330 Df Pulse[27234:138fc] [com.apple.securityd:SecWarning] SecTaskLoadEntitlements failed error=22 cs_flags=200, pid=27234 task=Pulse[27234]/0#-1 LF=22
+2026-11-21 12:44:06.374 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 1
+2026-11-21 12:44:06.374 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Ending task with identifier 1 and description: <_UIBackgroundTaskInfo: 0x6000019ddec0>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 1571 (elapsed = 1), _expireHandler: (null)
+2026-11-21 12:44:06.374 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002102710> (used by background task with identifier 1: <_UIBackgroundTaskInfo: 0x6000019ddec0>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 1571 (elapsed = 1))
+2026-11-21 12:44:06.374 Df Pulse[27234:138fc] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x600002102710> for task identifier: 1
+2026-11-21 12:44:06.479 A  Pulse[27234:13306] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:44:06.520 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:08.918 A  Pulse[27234:13306] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:44:08.924 Df Pulse[27234:12f25] [com.apple.xpc:connection] [0x107d29f80] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+2026-11-21 12:44:08.930 A  Pulse[27234:13306] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:44:08.985 Df Pulse[27234:12f25] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:1 [A1A96623-FB98-4335-B142-97F1A9769B4E] (reporting strategy default)>
+2026-11-21 12:44:08.985 Df Pulse[27234:12f25] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:2 [2D57C641-C25D-4D9F-BD90-A62E29B409AA] (reporting strategy default)>
+2026-11-21 12:44:08.985 Df Pulse[27234:12f25] [com.apple.network:activity] Set activity <nw_activity 50:1 [A1A96623-FB98-4335-B142-97F1A9769B4E] (reporting strategy default)> as the global parent
+2026-11-21 12:44:08.988 Df Pulse[27234:12f25] [com.apple.UIKit:UpdateScheduler] Target list changed: <CADisplay:LCD PurpleMain>
+2026-11-21 12:44:08.991 Df Pulse[27234:12f25] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:net.dehlwes.pulse-default  persistentID: 7DC241AE-F259-4878-81AC-C8B88E58E347
+2026-11-21 12:44:08.992 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 2, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:09.021 Df Pulse[27234:12f25] [com.apple.BackgroundTasks:Framework] Handling app launch
+2026-11-21 12:44:09.022 Df Pulse[27234:12f25] [com.apple.Accessibility:AXCommon] Read Per-App on Init: Smart invert = (null)
+2026-11-21 12:44:09.027 Df Pulse[27234:12f25] [com.apple.UIKit:EventDeferring] [0x6000029012d0] Scene target of event deferring environments did update: scene: 0x107e276f0; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-11-21 12:44:09.028 Df Pulse[27234:12f25] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x107e276f0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Anet.dehlwes.pulse-default
+2026-11-21 12:44:09.030 A  Pulse[27234:138fc] (RunningBoardServices) didChangeInheritances
+2026-11-21 12:44:09.036 Df Pulse[27234:12f25] [com.apple.FrontBoard:SceneExtension] Realizing settings extension SBUISecureRenderingSettingsExtension on FBSSceneSettings
+2026-11-21 12:44:09.038 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:09.038 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:09.040 Df Pulse[27234:12f25] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:net.dehlwes.pulse-default  persistentID: 7DC241AE-F259-4878-81AC-C8B88E58E347
+2026-11-21 12:44:09.041 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4128 -> 32; animating application lifecycle event: 1
+2026-11-21 12:44:09.041 Df Pulse[27234:12f25] [com.apple.KeyboardArbiter:Client] Send setDeactivating: N (-DeactivationReason:SuspendedEventsOnly)
+2026-11-21 12:44:09.044 Df Pulse[27234:12f25] [com.apple.UIKit:Application] Deactivation reason removed: 5; deactivation reasons: 32 -> 0; animating application lifecycle event: 0
+2026-11-21 12:44:09.046 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Scene did update interface style to 1, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:09.046 Df Pulse[27234:12f25] [com.apple.UIKit:InterfaceStyle] Push traits update to screen for new style 1, <UIWindowScene: 0x107e276f0> (7DC241AE-F259-4878-81AC-C8B88E58E347)
+2026-11-21 12:44:09.912 Df Pulse[27234:12f25] [com.apple.KeyboardArbiter:Client] startConnection
+2026-11-21 12:44:09.916 Df Pulse[27234:12f25] [com.apple.xpc:connection] [0x107c99860] activating connection: mach=true listener=false peer=false name=com.apple.UIKit.KeyboardManagement.hosted
+2026-11-21 12:44:09.946 Df Pulse[27234:12f25] [com.apple.KeyboardArbiter:Client] handleKeyboardChange: set currentKeyboard:N (wasKeyboard:N)
+2026-11-21 12:44:09.955 Df Pulse[27234:12f25] [com.apple.UIKit:KeyboardArbiterClientLog] isWritingToolsHandlingKeyboardTracking:Y (WT ready:Y, Arbiter ready:Y)
+2026-11-21 12:44:10.007 Df Pulse[27234:12f25] [com.apple.network:activity] <nw_activity 50:1 [A1A96623-FB98-4335-B142-97F1A9769B4E] (global parent) (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 34153ms
+2026-11-21 12:44:10.007 Df Pulse[27234:12f25] [com.apple.network:activity] <nw_activity 50:2 [2D57C641-C25D-4D9F-BD90-A62E29B409AA] (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 34153ms
+2026-11-21 12:44:10.008 Df Pulse[27234:12f25] [com.apple.network:activity] Unsetting the global parent activity <nw_activity 50:1 [A1A96623-FB98-4335-B142-97F1A9769B4E] (global parent) (reporting strategy default) complete (reason success)>
+2026-11-21 12:44:10.008 Df Pulse[27234:12f25] [com.apple.network:activity] Unset the global parent activity
