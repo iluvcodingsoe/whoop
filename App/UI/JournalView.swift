@@ -124,61 +124,77 @@ struct JournalView: View {
     // MARK: - Journal
 
     private var journalCard: some View {
-        let key = model.selectedDayKey
-        let entry = model.journalEntry(for: key)
-        let progress = model.journalProgress(for: key)
-        let date = DayKey.date(from: key) ?? Date()
-        let yes = entry.yesIDs.filter(model.isTracked).compactMap(JournalCatalog.behavior)
-        let complete = progress.total > 0 && progress.answered >= progress.total
-
-        return Panel(padding: 24) {
-            VStack(alignment: .leading, spacing: 18) {
+        VStack(spacing: 14) {
+            journalCard(JournalPrompt(time: .morning, day: model.selectedDayKey))
+            journalCard(JournalPrompt(time: .evening, day: model.selectedDayKey))
+            Button {
+                showPicker = true
+            } label: {
                 HStack {
-                    CapsLabel(text: date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()), size: 15)
+                    Image(systemName: "slider.horizontal.3")
+                    Text("Tracking \(model.trackedBehaviorIDs.count) behaviors")
                     Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Theme.textSecondary)
+                .padding(.horizontal, 6)
+                .padding(.top, 4)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func journalCard(_ prompt: JournalPrompt) -> some View {
+        let entry = model.journalEntry(for: prompt.key)
+        let progress = model.journalProgress(prompt)
+        let yes = model.trackedBehaviors(prompt.time).filter { entry.answers[$0.id] == true }
+        let complete = progress.total > 0 && progress.answered >= progress.total
+        let isToday = prompt.day == DayKey.today()
+        let hint = prompt.time == .morning
+            ? (isToday ? "Fill out when you wake up. Questions about last night." : "Questions about the night before this day.")
+            : (isToday ? "Fill out before bed. Questions about your day." : "Questions about this day.")
+
+        return Panel(padding: 22) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: prompt.time.symbol)
+                        .font(.system(size: 18))
+                        .foregroundStyle(prompt.time == .morning ? Theme.yellow : Theme.sleepPurple)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.white.opacity(0.06)))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(prompt.time.title) Journal")
+                            .font(.system(size: 19, weight: .semibold))
+                            .foregroundStyle(Theme.textPrimary)
+                        Text(hint)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 4)
                     if complete {
-                        Label("Complete", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 22))
                             .foregroundStyle(Theme.green)
                     }
                 }
                 JournalProgressBar(answered: progress.answered, total: progress.total)
-                if yes.isEmpty {
-                    Text(progress.answered == 0
-                         ? "Answer a few yes or no questions about this day. Pulse links them to the next morning\u{2019}s recovery."
-                         : "You answered no to everything so far.")
-                        .font(.system(size: 17))
-                        .foregroundStyle(Theme.textPrimary.opacity(0.72))
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
+                if !yes.isEmpty {
                     FlowTags(tags: yes.map { ($0.symbol, $0.title) })
                 }
                 Button {
-                    model.journalPromptDay = key
+                    model.journalPrompt = prompt
                 } label: {
-                    Text(progress.answered == 0 ? "Start journal" : complete ? "Edit journal" : "Continue journal")
-                        .font(.system(size: 17, weight: .bold))
+                    Text(progress.answered == 0 ? "Start" : complete ? "Edit" : "Continue")
+                        .font(.system(size: 16, weight: .bold))
                         .kerning(1.8)
                         .textCase(.uppercase)
                         .foregroundStyle(complete ? Theme.textPrimary : Color.black)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
+                        .frame(height: 50)
                         .background(Capsule().fill(complete ? Color.white.opacity(0.1) : Color.white))
-                }
-                .buttonStyle(.plain)
-                Button {
-                    showPicker = true
-                } label: {
-                    HStack {
-                        Image(systemName: "slider.horizontal.3")
-                        Text("Tracking \(model.trackedBehaviorIDs.count) behaviors")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                    }
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }

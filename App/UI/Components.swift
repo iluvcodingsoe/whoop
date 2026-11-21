@@ -362,18 +362,21 @@ struct JournalQuestionRow: View {
 struct JournalPromptSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    let dayKey: String
+    let prompt: JournalPrompt
     @State private var showPicker = false
 
+    private var dayKey: String { prompt.key }
+
     var body: some View {
-        let progress = model.journalProgress(for: dayKey)
+        let progress = model.journalProgress(prompt)
+        let behaviors = model.trackedBehaviors(prompt.time)
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(Fmt.dayTitle(dayKey))
+                    Label(prompt.time == .morning ? "Good morning" : "Good evening", systemImage: prompt.time.symbol)
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("Answer for this day. Pulse links your answers to the next morning\u{2019}s recovery.")
+                    Text(JournalPromptSheet.subtitle(prompt))
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.textSecondary)
                         .padding(.top, 6)
@@ -382,15 +385,15 @@ struct JournalPromptSheet: View {
                     JournalProgressBar(answered: progress.answered, total: progress.total)
                         .padding(.top, 18)
 
-                    if model.trackedBehaviors.isEmpty {
-                        Text("You are not tracking any behaviors yet.")
+                    if behaviors.isEmpty {
+                        Text("You are not tracking any \(prompt.time.title.lowercased()) behaviors yet.")
                             .font(.system(size: 16))
                             .foregroundStyle(Theme.textSecondary)
                             .padding(.top, 24)
                     }
 
                     ForEach(JournalCategory.allCases) { category in
-                        let items = model.trackedBehaviors.filter { $0.category == category }
+                        let items = behaviors.filter { $0.category == category }
                         if !items.isEmpty {
                             SectionHeading(text: category.title)
                                 .padding(.top, 28)
@@ -438,14 +441,24 @@ struct JournalPromptSheet: View {
                 .padding(20)
             }
             .background(Theme.bg)
-            .navigationTitle("Journal")
+            .navigationTitle("\(prompt.time.title) Journal")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showPicker) {
-                BehaviorPickerSheet()
+                BehaviorPickerSheet(time: prompt.time)
             }
         }
         .presentationDetents([.large])
         .preferredColorScheme(.dark)
+    }
+}
+
+extension JournalPromptSheet {
+    static func subtitle(_ prompt: JournalPrompt) -> String {
+        let day = (DayKey.date(from: prompt.day) ?? Date()).formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+        switch prompt.time {
+        case .morning: return "About last night, before you woke up on \(day)."
+        case .evening: return "About your day on \(day)."
+        }
     }
 }
 
@@ -480,10 +493,25 @@ struct BehaviorPickerSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
+    @State var time: JournalTime?
+
+    init(time: JournalTime? = nil) {
+        _time = State(initialValue: time)
+    }
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Picker("Journal", selection: $time) {
+                        Text("All").tag(JournalTime?.none)
+                        ForEach(JournalTime.allCases) { t in
+                            Text(t.title).tag(JournalTime?.some(t))
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
+                }
                 Section {
                     Text("Tracking \(model.trackedBehaviorIDs.count). Track \(JournalCatalog.recommendedMax) or fewer at a time for clearer results.")
                         .font(.system(size: 14))
@@ -517,8 +545,9 @@ struct BehaviorPickerSheet: View {
 
     private var filtered: [JournalBehavior] {
         let query = search.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return JournalCatalog.all }
-        return JournalCatalog.all.filter {
+        let pool = JournalCatalog.all.filter { time == nil || $0.time == time }
+        guard !query.isEmpty else { return pool }
+        return pool.filter {
             $0.title.lowercased().contains(query) || $0.question.lowercased().contains(query)
         }
     }
@@ -540,6 +569,9 @@ struct BehaviorPickerSheet: View {
                     Text(behavior.question)
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
+                    Label(behavior.time.title, systemImage: behavior.time.symbol)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary.opacity(0.8))
                 }
                 Spacer()
                 Image(systemName: tracked ? "checkmark.circle.fill" : "plus.circle")

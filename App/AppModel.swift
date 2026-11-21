@@ -153,7 +153,7 @@ final class AppModel {
     var selectedDayKey: String
     private(set) var profileName: String?
     /// Tag, für den das Morgen-Journal-Popup gezeigt werden soll (i. d. R. gestern).
-    var journalPromptDay: String?
+    var journalPrompt: JournalPrompt?
 
     // MARK: - Dashboard-Anpassung
 
@@ -225,8 +225,14 @@ final class AppModel {
         demoMode = defaults.bool(forKey: Keys.demoMode)
         daysBack = (defaults.object(forKey: Keys.daysBack) as? Int) ?? 60
         hrDaysBack = (defaults.object(forKey: Keys.hrDaysBack) as? Int) ?? 14
-        trackedBehaviorIDs = (defaults.stringArray(forKey: Keys.journalBehaviors) ?? JournalCatalog.defaultIDs)
+        var tracked = (defaults.stringArray(forKey: Keys.journalBehaviors) ?? JournalCatalog.defaultIDs)
             .filter { JournalCatalog.behavior($0) != nil }
+        if !defaults.bool(forKey: "journal.addedSleepGear") {
+            for id in ["noseStrips", "retainers"] where !tracked.contains(id) { tracked.insert(id, at: 0) }
+            defaults.set(true, forKey: "journal.addedSleepGear")
+        }
+        trackedBehaviorIDs = tracked
+        defaults.set(tracked, forKey: Keys.journalBehaviors)
         baseSleepNeedMinutes = (defaults.object(forKey: Keys.sleepNeed) as? Double) ?? 456
         age = (defaults.object(forKey: Keys.age) as? Int) ?? 30
         sex = (defaults.string(forKey: Keys.sex)).flatMap(BiologicalSex.init(rawValue:)) ?? .unspecified
@@ -274,7 +280,7 @@ final class AppModel {
         let today = DayKey.today()
         seedDemoJournal(today: today)
         if args.contains("-screenshotJournal") {
-            journalPromptDay = DayKey.addDays(today, -1)
+            journalPrompt = JournalPrompt(time: .morning, day: today)
         }
         updateDayLog(today) { log in
             log.waterGlasses = 3
@@ -369,11 +375,15 @@ final class AppModel {
         }
     }
 
-    /// How many tracked questions are answered for a day.
-    func journalProgress(for key: String) -> (answered: Int, total: Int) {
-        let entry = journalEntry(for: key)
-        let answered = trackedBehaviorIDs.filter { entry.answers[$0] != nil }.count
-        return (answered, trackedBehaviorIDs.count)
+    func trackedBehaviors(_ time: JournalTime) -> [JournalBehavior] {
+        trackedBehaviors.filter { $0.time == time }
+    }
+
+    /// How many tracked questions of one journal are answered.
+    func journalProgress(_ prompt: JournalPrompt) -> (answered: Int, total: Int) {
+        let entry = journalEntry(for: prompt.key)
+        let items = trackedBehaviors(prompt.time)
+        return (items.filter { entry.answers[$0.id] != nil }.count, items.count)
     }
 
     /// Yes/no answers with next-day recovery in the last 90 days.
@@ -389,7 +399,7 @@ final class AppModel {
     /// Demo answers with a few clear patterns so Impacts has something to show.
     private func seedDemoJournal(today: String) {
         var generator = SeededGenerator(seed: 7)
-        let effects: [String: Int] = ["alcohol": -14, "lateMeal": -6, "screenBeforeBed": -4, "stretching": 5, "hydrated": 7, "exercised": 2, "stress": -9, "lateCaffeine": -5]
+        let effects: [String: Int] = ["alcohol": -14, "lateMeal": -6, "screenBeforeBed": -4, "stretching": 5, "hydrated": 7, "exercised": 2, "stress": -9, "lateCaffeine": -5, "noseStrips": 4, "retainers": 1, "woke": -8]
         for offset in 1...75 {
             let key = DayKey.addDays(today, -offset)
             guard journal.entry(for: key).isEmpty else { continue }
@@ -592,16 +602,26 @@ final class AppModel {
 
     /// Zeigt das Journal-Popup für gestern — höchstens 1× pro Tag, nur wenn
     /// gestern Daten hat und noch nichts eingetragen wurde.
+    /// Opens the morning journal once per morning, and the evening journal
+    /// once per evening after 7 PM, if they are not filled out yet.
     func maybeShowJournalPrompt() {
-        guard hasData, journalPromptDay == nil else { return }
-        let yesterday = DayKey.addDays(DayKey.today(), -1)
-        guard journal.entry(for: yesterday).isEmpty,
-              let record = store.days[yesterday],
-              record.restingHR != nil || !record.sleepSessions.isEmpty || record.steps != nil else { return }
-        let promptedKey = "journal.promptedFor"
-        guard defaults.string(forKey: promptedKey) != yesterday else { return }
-        defaults.set(yesterday, forKey: promptedKey)
-        journalPromptDay = yesterday
+        guard hasData, journalPrompt == nil else { return }
+        let today = DayKey.today()
+        let morning = JournalPrompt(time: .morning, day: today)
+        if Calendar.current.component(.hour, from: Date()) < 19 {
+            guard journalProgress(morning).answered == 0, !trackedBehaviors(.morning).isEmpty else { return }
+            let promptedKey = "journal.promptedMorning"
+            guard defaults.string(forKey: promptedKey) != today else { return }
+            defaults.set(today, forKey: promptedKey)
+            journalPrompt = morning
+        } else {
+            let evening = JournalPrompt(time: .evening, day: today)
+            guard journalProgress(evening).answered == 0, !trackedBehaviors(.evening).isEmpty else { return }
+            let promptedKey = "journal.promptedEvening"
+            guard defaults.string(forKey: promptedKey) != today else { return }
+            defaults.set(today, forKey: promptedKey)
+            journalPrompt = evening
+        }
     }
 
     /// Plant die Routine-Benachrichtigungen neu (nach jedem Sync):
@@ -993,4 +1013,15 @@ final class AppModel {
         let target = cal.date(from: comps) ?? now.addingTimeInterval(6 * 3600)
         return target > now ? target : (cal.date(byAdding: .day, value: 1, to: target) ?? now.addingTimeInterval(6 * 3600))
     }
+}
+
+/// One journal to fill out: the morning journal on `day` (about the night
+/// before) or the evening journal on `day` (about that day).
+struct JournalPrompt: Identifiable, Equatable {
+    let time: JournalTime
+    let day: String
+
+    var id: String { "\(time.rawValue)-\(day)" }
+    /// Where the answers are stored.
+    var key: String { time.storageKey(forDay: day) }
 }

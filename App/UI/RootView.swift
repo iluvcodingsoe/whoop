@@ -14,13 +14,11 @@ struct RootView: View {
         }
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
-        .sheet(isPresented: Binding(
-            get: { model.journalPromptDay != nil },
-            set: { if !$0 { model.journalPromptDay = nil } }
-        )) {
-            if let dayKey = model.journalPromptDay {
-                JournalPromptSheet(dayKey: dayKey)
-            }
+        .sheet(item: Binding(
+            get: { model.journalPrompt },
+            set: { model.journalPrompt = $0 }
+        )) { prompt in
+            JournalPromptSheet(prompt: prompt)
         }
     }
 }
