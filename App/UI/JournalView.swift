@@ -4,6 +4,7 @@ import SwiftUI
 struct JournalView: View {
     @Environment(AppModel.self) private var model
     @State private var logSheet: LogKind?
+    @State private var showPicker = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,13 @@ struct JournalView: View {
                         WeekStrip()
                             .padding(.top, 30)
 
+                        journalCard
+                            .padding(.top, 30)
+
+                        impactsSection
+                            .padding(.top, 32)
+                            .id("impacts")
+
                         SectionHeading(text: "Log")
                             .padding(.top, 32)
                         logTiles
@@ -34,22 +42,11 @@ struct JournalView: View {
                             .foregroundStyle(Theme.textSecondary)
                             .padding(.top, 14)
 
-                        SectionHeading(text: "Check-in")
-                            .padding(.top, 32)
-                        checkInCard
-                            .padding(.top, 16)
-
                         SectionHeading(text: "Measurements")
                             .padding(.top, 32)
                         MeasurementsPanel { logSheet = .weight }
                             .padding(.top, 16)
 
-                        if !model.journalInsights.isEmpty {
-                            SectionHeading(text: model.loc("Erkenntnisse", "Insights"))
-                                .padding(.top, 32)
-                            insights
-                                .padding(.top, 16)
-                        }
                 ScreenshotScrollAnchor(proxy: proxy)
                     }
                     .padding(.horizontal, 20)
@@ -61,6 +58,9 @@ struct JournalView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $logSheet) { kind in
                 LogSheet(kind: kind, dayKey: model.selectedDayKey)
+            }
+            .sheet(isPresented: $showPicker) {
+                BehaviorPickerSheet()
             }
         }
     }
@@ -121,78 +121,189 @@ struct JournalView: View {
         .scrollClipDisabled()
     }
 
-    // MARK: - Check-in
+    // MARK: - Journal
 
-    private var checkInCard: some View {
+    private var journalCard: some View {
         let key = model.selectedDayKey
         let entry = model.journalEntry(for: key)
-        let done = !entry.factors.isEmpty
+        let progress = model.journalProgress(for: key)
         let date = DayKey.date(from: key) ?? Date()
+        let yes = entry.yesIDs.filter(model.isTracked).compactMap(JournalCatalog.behavior)
+        let complete = progress.total > 0 && progress.answered >= progress.total
 
         return Panel(padding: 24) {
             VStack(alignment: .leading, spacing: 18) {
-                CapsLabel(text: date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()), size: 15)
-                if done {
-                    FlowTags(tags: entry.factors.sorted { $0.rawValue < $1.rawValue }.map { ($0.symbol, $0.label(model.language)) })
+                HStack {
+                    CapsLabel(text: date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()), size: 15)
+                    Spacer()
+                    if complete {
+                        Label("Complete", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.green)
+                    }
+                }
+                JournalProgressBar(answered: progress.answered, total: progress.total)
+                if yes.isEmpty {
+                    Text(progress.answered == 0
+                         ? "Answer a few yes or no questions about this day. Pulse links them to the next morning\u{2019}s recovery."
+                         : "You answered no to everything so far.")
+                        .font(.system(size: 17))
+                        .foregroundStyle(Theme.textPrimary.opacity(0.72))
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text(model.loc(
-                        "Trag ein, was du heute gemacht hast. Pulse vergleicht es mit der Recovery von morgen.",
-                        "Log what you did today. Pulse compares it with tomorrow\u{2019}s Recovery."
-                    ))
-                    .font(.system(size: 19))
-                    .foregroundStyle(Theme.textPrimary.opacity(0.72))
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
+                    FlowTags(tags: yes.map { ($0.symbol, $0.title) })
                 }
                 Button {
                     model.journalPromptDay = key
                 } label: {
-                    Text(done ? model.loc("Bearbeiten", "Edit check-in") : model.loc("Einchecken", "Check in"))
+                    Text(progress.answered == 0 ? "Start journal" : complete ? "Edit journal" : "Continue journal")
                         .font(.system(size: 17, weight: .bold))
                         .kerning(1.8)
                         .textCase(.uppercase)
-                        .foregroundStyle(done ? Theme.textPrimary : Color.black)
+                        .foregroundStyle(complete ? Theme.textPrimary : Color.black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(
-                            Capsule().fill(done ? Color.white.opacity(0.1) : Color.white)
-                        )
+                        .background(Capsule().fill(complete ? Color.white.opacity(0.1) : Color.white))
+                }
+                .buttonStyle(.plain)
+                Button {
+                    showPicker = true
+                } label: {
+                    HStack {
+                        Image(systemName: "slider.horizontal.3")
+                        Text("Tracking \(model.trackedBehaviorIDs.count) behaviors")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    // MARK: - Erkenntnisse
+    // MARK: - Impacts
 
-    private var insights: some View {
-        Panel(padding: 0) {
-            VStack(spacing: 0) {
-                ForEach(Array(model.journalInsights.prefix(4).enumerated()), id: \.element.id) { index, insight in
-                    if index > 0 { PanelDivider() }
-                    HStack(spacing: 14) {
-                        Image(systemName: insight.factor.symbol)
-                            .font(.system(size: 18))
-                            .foregroundStyle(Theme.textSecondary)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(insight.factor.label(model.language))
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundStyle(Theme.textPrimary)
-                            Text(model.loc("Recovery am Folgetag", "Next-day recovery"))
-                                .font(.system(size: 14))
-                                .foregroundStyle(Theme.textSecondary)
+    private var impactsSection: some View {
+        let insights = model.journalInsights
+        let helps = insights.filter { $0.delta >= 0 }.sorted { $0.delta > $1.delta }
+        let hurts = insights.filter { $0.delta < 0 }.sorted { $0.delta < $1.delta }
+        let learning = model.trackedBehaviors.filter { b in !insights.contains { $0.behaviorID == b.id } }
+
+        return VStack(alignment: .leading, spacing: 0) {
+            SectionHeading(text: "Impacts")
+            Text("How each behavior relates to your next-day recovery over the last 90 days.")
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.textSecondary)
+                .padding(.top, 8)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !helps.isEmpty {
+                impactGroup("Positive", insights: helps)
+                    .padding(.top, 16)
+            }
+            if !hurts.isEmpty {
+                impactGroup("Negative", insights: hurts)
+                    .padding(.top, 16)
+            }
+            if !learning.isEmpty {
+                CapsLabel(text: "Still learning", size: 13)
+                    .padding(.top, 20)
+                Panel(padding: 0) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(learning.enumerated()), id: \.element.id) { index, behavior in
+                            if index > 0 { PanelDivider() }
+                            learningRow(behavior)
                         }
-                        Spacer()
-                        Text(String(format: "%+.0f%%", insight.delta))
-                            .font(.system(size: 20, weight: .bold).monospacedDigit())
-                            .foregroundStyle(insight.delta >= 0 ? Theme.green : Theme.orange)
                     }
-                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
+                }
+                .padding(.top, 10)
+            }
+            Text("Needs 5 yes and 5 no answers in 90 days. Shows a link, not proof of cause.")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.textSecondary.opacity(0.8))
+                .padding(.top, 12)
+        }
+    }
+
+    private func impactGroup(_ title: String, insights: [FactorInsight]) -> some View {
+        let maxDelta = max(insights.map { abs($0.percentChange) }.max() ?? 1, 1)
+        return VStack(alignment: .leading, spacing: 10) {
+            CapsLabel(text: title, size: 13)
+            Panel(padding: 0) {
+                VStack(spacing: 0) {
+                    ForEach(Array(insights.enumerated()), id: \.element.id) { index, insight in
+                        if index > 0 { PanelDivider() }
+                        impactRow(insight, maxDelta: maxDelta)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private func impactRow(_ insight: FactorInsight, maxDelta: Double) -> some View {
+        let positive = insight.delta >= 0
+        let color = positive ? Theme.green : Theme.red
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 14) {
+                Image(systemName: insight.symbol)
+                    .font(.system(size: 18))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(insight.title)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("\(Int(insight.avgWith.rounded()))% with · \(Int(insight.avgWithout.rounded()))% without")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(String(format: "%+.0f%%", insight.percentChange))
+                        .font(.system(size: 20, weight: .bold).monospacedDigit())
+                        .foregroundStyle(color)
+                    Text(insight.confidence == .solid ? "Clear" : "Trend")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
-            .padding(.horizontal, 20)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.06))
+                    Capsule()
+                        .fill(color)
+                        .frame(width: max(6, geo.size.width * CGFloat(abs(insight.percentChange) / maxDelta)))
+                }
+            }
+            .frame(height: 5)
+            .padding(.leading, 42)
         }
+        .padding(.vertical, 16)
+    }
+
+    private func learningRow(_ behavior: JournalBehavior) -> some View {
+        let counts = model.journalCounts(for: behavior.id)
+        let need = JournalEngine.minDaysPerGroup
+        return HStack(spacing: 14) {
+            Image(systemName: behavior.symbol)
+                .font(.system(size: 18))
+                .foregroundStyle(Theme.textSecondary)
+                .frame(width: 28)
+            Text(behavior.title)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Text("Yes \(min(counts.yes, need))/\(need) · No \(min(counts.no, need))/\(need)")
+                .font(.system(size: 13, weight: .medium).monospacedDigit())
+                .foregroundStyle(Theme.textSecondary)
+        }
+        .padding(.vertical, 14)
     }
 }
 

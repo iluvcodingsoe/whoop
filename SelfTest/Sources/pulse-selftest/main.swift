@@ -163,7 +163,9 @@ check(Stats.baseline([1, 2]) == nil, "Baseline braucht mindestens 3 Werte")
 // MARK: Sprachen
 
 section("Sprachen (DE/EN)")
-check(JournalFactor.alcohol.label(.de) == "Alkohol" && JournalFactor.alcohol.label(.en) == "Alcohol", "JournalFactor zweisprachig")
+check(JournalCatalog.behavior("alcohol")?.title == "Alcohol", "Journal catalog has alcohol")
+check(JournalCatalog.all.count >= 100, "Journal catalog has 100+ behaviors")
+check(Set(JournalCatalog.all.map(\.id)).count == JournalCatalog.all.count, "Journal ids are unique")
 check(BiologicalSex.male.label(.en) == "Male", "BiologicalSex englisch")
 check(HealthMetricKind.restingHR.label(.en) == "Resting HR" && HealthMetricKind.restingHR.unit(.en) == "bpm", "HealthMetricKind englisch inkl. Einheit")
 check(StrainEngine.zoneLabels(.en).count == StrainEngine.zoneLabels.count, "Zonen-Labels: EN-Liste vollständig")
@@ -501,20 +503,26 @@ var journalRecovery: [String: Int] = [:]
 for i in 0..<12 {
     let day = DayKey.addDays("2026-06-01", i)
     let alcohol = i % 2 == 0
-    let factors: Set<JournalFactor> = alcohol ? [.alcohol] : []
-    journalEntries[day] = JournalEntry(date: day, factors: factors)
+    journalEntries[day] = JournalEntry(date: day, answers: ["alcohol": alcohol])
     journalRecovery[DayKey.addDays("2026-06-01", i + 1)] = alcohol ? 45 : 75
 }
 let insights = JournalEngine.insights(entries: journalEntries, recoveryByDay: journalRecovery)
-if let alc = insights.first(where: { $0.factor == .alcohol }) {
+if let alc = insights.first(where: { $0.behaviorID == "alcohol" }) {
     check(alc.delta < -15, "Alkohol senkt Folge-Recovery deutlich (Δ \(Int(alc.delta)))")
     check(alc.daysWith >= 5 && alc.daysWithout >= 5, "Beide Gruppen über Whoop-Mindestfallzahl (5/5)")
     check(alc.confidence == .solid, "Klarer, konsistenter Effekt → belastbar")
 } else {
     check(false, "Alkohol-Insight fehlt trotz Daten")
 }
-check(!insights.contains { $0.factor == .sick }, "Faktor ohne Einträge liefert kein Insight")
-check(JournalFactor.allCases.contains(.sex), "Sex ist als Journal-Faktor vorhanden")
+check(!insights.contains { $0.behaviorID == "sick" }, "Faktor ohne Einträge liefert kein Insight")
+let windowed = JournalEngine.insights(entries: journalEntries, recoveryByDay: journalRecovery, today: "2026-12-01")
+check(windowed.isEmpty, "Answers older than 90 days are ignored")
+let legacyJSON = #"{"date":"2026-07-01","factors":["alcohol"]}"#.data(using: .utf8)!
+if let legacy = try? JSONDecoder().decode(JournalEntry.self, from: legacyJSON) {
+    check(legacy.answer("alcohol") == true && legacy.answer("stress") == false, "Old journal format decodes into yes/no answers")
+} else {
+    check(false, "Old journal format does not decode")
+}
 
 // Verrauschter Mini-Effekt → nur Tendenz, nicht belastbar.
 var noisyEntries: [String: JournalEntry] = [:]
@@ -523,10 +531,10 @@ var noisyRecovery: [String: Int] = [:]
 let noisyScores = [55, 58, 80, 77, 60, 63, 75, 74, 65, 70, 72, 68]
 for i in 0..<12 {
     let day = DayKey.addDays("2026-05-01", i)
-    noisyEntries[day] = JournalEntry(date: day, factors: i % 2 == 0 ? [.lateMeal] : [])
+    noisyEntries[day] = JournalEntry(date: day, answers: ["lateMeal": i % 2 == 0])
     noisyRecovery[DayKey.addDays("2026-05-01", i + 1)] = noisyScores[i]
 }
-if let noisy = JournalEngine.insights(entries: noisyEntries, recoveryByDay: noisyRecovery).first(where: { $0.factor == .lateMeal }) {
+if let noisy = JournalEngine.insights(entries: noisyEntries, recoveryByDay: noisyRecovery).first(where: { $0.behaviorID == "lateMeal" }) {
     check(noisy.confidence == .emerging, "Kleiner Effekt in starkem Rauschen → nur Tendenz (Δ \(String(format: "%.1f", noisy.delta)), SE \(String(format: "%.1f", noisy.standardError)))")
 } else {
     check(false, "Rausch-Insight fehlt trotz 6/6 Tagen")
@@ -539,11 +547,11 @@ check(JournalEngine.assessmentReady(recoveryByDay: manyRecoveries), "Ab 28 Recov
 
 let tmpJournal = FileManager.default.temporaryDirectory.appendingPathComponent("pulse-journal-\(UUID().uuidString)")
 let jStore = JournalStore(directory: tmpJournal)
-jStore.toggle(.alcohol, on: "2026-07-18")
-check(jStore.isSet(.alcohol, on: "2026-07-18"), "Toggle setzt Faktor")
+jStore.setAnswer("alcohol", true, on: "2026-07-18")
+check(jStore.answer("alcohol", on: "2026-07-18") == true, "Answer is stored")
 check(jStore.save(), "Journal speichern erfolgreich")
 let jReload = JournalStore(directory: tmpJournal)
-check(jReload.isSet(.alcohol, on: "2026-07-18"), "Journal übersteht Roundtrip")
+check(jReload.answer("alcohol", on: "2026-07-18") == true, "Journal übersteht Roundtrip")
 try? FileManager.default.removeItem(at: tmpJournal)
 
 // MARK: Schlafschuld (kein Zinseszins, Kappung pro Nacht)
