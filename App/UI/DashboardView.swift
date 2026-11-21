@@ -630,9 +630,9 @@ struct DayReviewView: View {
                     .padding(.horizontal, 20)
                 }
 
-                if !entry.factors.isEmpty {
-                    SectionHeading(text: "Check-in")
-                    FlowTags(tags: entry.factors.sorted { $0.rawValue < $1.rawValue }.map { ($0.symbol, $0.label(model.language)) })
+                if !entry.yesIDs.isEmpty {
+                    SectionHeading(text: "Journal")
+                    FlowTags(tags: entry.yesIDs.compactMap(JournalCatalog.behavior).map { ($0.symbol, $0.title) })
                 }
             }
             .padding(.horizontal, 20)

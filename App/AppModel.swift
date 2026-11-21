@@ -16,6 +16,7 @@ final class AppModel {
         static let onboarded = "app.onboarded"
         static let demoMode = "app.demoMode"
         static let daysBack = "sync.daysBack"
+        static let journalBehaviors = "journal.behaviors"
         static let hrDaysBack = "sync.hrDaysBack"
         static let sleepNeed = "calc.sleepNeedMinutes"
         static let age = "calc.age"
@@ -66,6 +67,10 @@ final class AppModel {
     }
     var hrDaysBack: Int {
         didSet { defaults.set(hrDaysBack, forKey: Keys.hrDaysBack) }
+    }
+    /// Behaviors asked in the journal, in the user's order.
+    var trackedBehaviorIDs: [String] {
+        didSet { defaults.set(trackedBehaviorIDs, forKey: Keys.journalBehaviors) }
     }
     var baseSleepNeedMinutes: Double {
         didSet {
@@ -220,6 +225,8 @@ final class AppModel {
         demoMode = defaults.bool(forKey: Keys.demoMode)
         daysBack = (defaults.object(forKey: Keys.daysBack) as? Int) ?? 60
         hrDaysBack = (defaults.object(forKey: Keys.hrDaysBack) as? Int) ?? 14
+        trackedBehaviorIDs = (defaults.stringArray(forKey: Keys.journalBehaviors) ?? JournalCatalog.defaultIDs)
+            .filter { JournalCatalog.behavior($0) != nil }
         baseSleepNeedMinutes = (defaults.object(forKey: Keys.sleepNeed) as? Double) ?? 456
         age = (defaults.object(forKey: Keys.age) as? Int) ?? 30
         sex = (defaults.string(forKey: Keys.sex)).flatMap(BiologicalSex.init(rawValue:)) ?? .unspecified
@@ -265,11 +272,9 @@ final class AppModel {
         }
         // Ein paar Beispiel-Einträge, damit das Journal nicht leer aussieht.
         let today = DayKey.today()
-        for offset in 1...7 {
-            let key = DayKey.addDays(today, -offset)
-            if journal.entry(for: key).factors.isEmpty {
-                journal.toggle(.exercised, on: key)
-            }
+        seedDemoJournal(today: today)
+        if args.contains("-screenshotJournal") {
+            journalPromptDay = DayKey.addDays(today, -1)
         }
         updateDayLog(today) { log in
             log.waterGlasses = 3
@@ -342,8 +347,61 @@ final class AppModel {
         journalEntries[key] ?? JournalEntry(date: key)
     }
 
-    func toggleJournal(_ factor: JournalFactor, on key: String) {
-        journal.toggle(factor, on: key)
+    func setJournalAnswer(_ id: String, _ value: Bool?, on key: String) {
+        journal.setAnswer(id, value, on: key)
+        journal.save()
+        recomputeJournalInsights()
+    }
+
+    var trackedBehaviors: [JournalBehavior] {
+        trackedBehaviorIDs.compactMap(JournalCatalog.behavior)
+    }
+
+    func isTracked(_ id: String) -> Bool {
+        trackedBehaviorIDs.contains(id)
+    }
+
+    func toggleTracked(_ id: String) {
+        if let i = trackedBehaviorIDs.firstIndex(of: id) {
+            trackedBehaviorIDs.remove(at: i)
+        } else {
+            trackedBehaviorIDs.append(id)
+        }
+    }
+
+    /// How many tracked questions are answered for a day.
+    func journalProgress(for key: String) -> (answered: Int, total: Int) {
+        let entry = journalEntry(for: key)
+        let answered = trackedBehaviorIDs.filter { entry.answers[$0] != nil }.count
+        return (answered, trackedBehaviorIDs.count)
+    }
+
+    /// Yes/no answers with next-day recovery in the last 90 days.
+    func journalCounts(for id: String) -> (yes: Int, no: Int) {
+        JournalEngine.counts(
+            for: id,
+            entries: journalEntries,
+            recoveryByDay: recoveryResults.mapValues { $0.score },
+            today: DayKey.today()
+        )
+    }
+
+    /// Demo answers with a few clear patterns so Impacts has something to show.
+    private func seedDemoJournal(today: String) {
+        var generator = SeededGenerator(seed: 7)
+        let effects: [String: Int] = ["alcohol": -14, "lateMeal": -6, "screenBeforeBed": -4, "stretching": 5, "hydrated": 7, "exercised": 2, "stress": -9, "lateCaffeine": -5]
+        for offset in 1...75 {
+            let key = DayKey.addDays(today, -offset)
+            guard journal.entry(for: key).isEmpty else { continue }
+            let next = recoveryResults[DayKey.addDays(key, 1)].map { Double($0.score) } ?? 60
+            let lowness = Stats.clamp((60 - next) / 30, -1, 1)
+            for id in trackedBehaviorIDs {
+                let effect = Double(effects[id] ?? 0)
+                let base = id == "alcohol" ? 0.25 : 0.45
+                let chance = Stats.clamp(base - lowness * effect / 25, 0.05, 0.95)
+                journal.setAnswer(id, Double.random(in: 0..<1, using: &generator) < chance, on: key)
+            }
+        }
         journal.save()
         recomputeJournalInsights()
     }
@@ -362,7 +420,7 @@ final class AppModel {
 
     /// Hat der Nutzer für den Tag eingecheckt (Journal-Faktoren oder Log)?
     func isCheckedIn(_ key: String) -> Bool {
-        !(journalEntries[key]?.factors.isEmpty ?? true) || !(dayLogs[key]?.isEmpty ?? true)
+        !(journalEntries[key]?.isEmpty ?? true) || !(dayLogs[key]?.isEmpty ?? true)
     }
 
     /// Aufeinanderfolgende Tage mit Daten bis heute (Serie oben links).
@@ -524,7 +582,7 @@ final class AppModel {
         journalEntries = journal.entries
         dayLogs = dailyLogs.logs
         let recoveryByDay = recoveryResults.mapValues { $0.score }
-        journalInsights = JournalEngine.insights(entries: journal.entries, recoveryByDay: recoveryByDay)
+        journalInsights = JournalEngine.insights(entries: journal.entries, recoveryByDay: recoveryByDay, today: DayKey.today())
     }
 
     /// Anzahl Tage mit Recovery — Grundlage für die Monats-Auswertung (ab 28).
@@ -537,7 +595,7 @@ final class AppModel {
     func maybeShowJournalPrompt() {
         guard hasData, journalPromptDay == nil else { return }
         let yesterday = DayKey.addDays(DayKey.today(), -1)
-        guard journal.entry(for: yesterday).factors.isEmpty,
+        guard journal.entry(for: yesterday).isEmpty,
               let record = store.days[yesterday],
               record.restingHR != nil || !record.sleepSessions.isEmpty || record.steps != nil else { return }
         let promptedKey = "journal.promptedFor"
@@ -914,7 +972,7 @@ final class AppModel {
         if let rec = recovery(for: today) {
             let sleepText = sleep(for: today).flatMap { $0.hasData ? "\(Fmt.hm($0.sleptMinutes)) h" : nil }
             let yesterday = DayKey.addDays(today, -1)
-            let journalPending = journal.entry(for: yesterday).factors.isEmpty && store.days[yesterday] != nil
+            let journalPending = journal.entry(for: yesterday).isEmpty && store.days[yesterday] != nil
             let alertMessage = HealthMonitor.alert(records: store.chronological(upTo: today, count: 10), language: language)?.message
             PulseNotifications.postRecoverySummary(
                 recovery: rec.score,

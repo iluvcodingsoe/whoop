@@ -310,88 +310,120 @@ func zip2<A, B>(_ a: A?, _ b: B?) -> (A, B)? {
 
 // MARK: - Journal
 
-/// Faktor-Chips für einen Tag — genutzt von der Dashboard-Karte und dem
-/// Morgen-Popup.
-struct JournalFactorGrid: View {
+/// One yes/no question with two pill buttons. Tapping the chosen answer again clears it.
+struct JournalQuestionRow: View {
     @Environment(AppModel.self) private var model
+    let behavior: JournalBehavior
     let dayKey: String
 
     var body: some View {
-        let entry = model.journalEntry(for: dayKey)
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 108), spacing: 8)],
-            alignment: .leading,
-            spacing: 8
-        ) {
-            ForEach(JournalFactor.allCases) { factor in
-                let active = entry.factors.contains(factor)
-                Button {
-                    model.toggleJournal(factor, on: dayKey)
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: factor.symbol)
-                            .font(.caption)
-                        Text(factor.label(model.language))
-                            .font(.caption)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(active ? Theme.accent.opacity(0.20) : Theme.cardElevated)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(active ? Theme.accent : .clear, lineWidth: 1)
-                    )
-                    .foregroundStyle(active ? Theme.accent : Theme.textSecondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
-struct JournalCard: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        SectionCard("Journal") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(model.loc("Was war los? Wirkt sich auf die Recovery der nächsten Nacht aus.", "What happened? Affects the next night\u{2019}s recovery."))
-                    .font(.caption)
+        let answer = model.journalEntry(for: dayKey).answer(behavior.id)
+        HStack(spacing: 14) {
+            Image(systemName: behavior.symbol)
+                .font(.system(size: 18))
+                .foregroundStyle(answer == nil ? Theme.textSecondary : Theme.textPrimary)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(behavior.question)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Theme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(behavior.title)
+                    .font(.system(size: 13))
                     .foregroundStyle(Theme.textSecondary)
-                JournalFactorGrid(dayKey: model.selectedDayKey)
+            }
+            Spacer(minLength: 8)
+            HStack(spacing: 6) {
+                pill("No", selected: answer == false) { set(false, current: answer) }
+                pill("Yes", selected: answer == true) { set(true, current: answer) }
             }
         }
+        .padding(.vertical, 14)
+    }
+
+    private func set(_ value: Bool, current: Bool?) {
+        model.setJournalAnswer(behavior.id, current == value ? nil : value, on: dayKey)
+    }
+
+    private func pill(_ text: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text.uppercased())
+                .font(.system(size: 13, weight: .bold))
+                .kerning(1)
+                .foregroundStyle(selected ? Color.black : Theme.textPrimary)
+                .frame(width: 52, height: 34)
+                .background(Capsule().fill(selected ? Color.white : Color.white.opacity(0.08)))
+        }
+        .buttonStyle(.plain)
     }
 }
 
-/// Morgen-Popup: kurzer Check-in für gestern, sobald neue Daten da sind.
+/// The daily journal: every tracked behavior as a yes/no question, grouped by category.
 struct JournalPromptSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let dayKey: String
+    @State private var showPicker = false
 
     var body: some View {
+        let progress = model.journalProgress(for: dayKey)
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 0) {
                     Text(Fmt.dayTitle(dayKey))
-                        .font(.system(.title3, design: .rounded).weight(.bold))
+                        .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text(model.loc("Kurzer Check-in: Was war los? Je vollständiger dein Journal, desto besser werden deine Korrelationen.", "Quick check-in: what happened? The more complete your journal, the better your correlations."))
-                        .font(.subheadline)
+                    Text("Answer for this day. Pulse links your answers to the next morning\u{2019}s recovery.")
+                        .font(.system(size: 15))
                         .foregroundStyle(Theme.textSecondary)
-                    JournalFactorGrid(dayKey: dayKey)
+                        .padding(.top, 6)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    JournalProgressBar(answered: progress.answered, total: progress.total)
+                        .padding(.top, 18)
+
+                    if model.trackedBehaviors.isEmpty {
+                        Text("You are not tracking any behaviors yet.")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Theme.textSecondary)
+                            .padding(.top, 24)
+                    }
+
+                    ForEach(JournalCategory.allCases) { category in
+                        let items = model.trackedBehaviors.filter { $0.category == category }
+                        if !items.isEmpty {
+                            SectionHeading(text: category.title)
+                                .padding(.top, 28)
+                            Panel(padding: 0) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(items.enumerated()), id: \.element.id) { index, behavior in
+                                        if index > 0 { PanelDivider() }
+                                        JournalQuestionRow(behavior: behavior, dayKey: dayKey)
+                                    }
+                                }
+                                .padding(.horizontal, 18)
+                            }
+                            .padding(.top, 12)
+                        }
+                    }
+
+                    Button {
+                        showPicker = true
+                    } label: {
+                        Label("Add or remove behaviors", systemImage: "slider.horizontal.3")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Theme.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Capsule().fill(Color.white.opacity(0.08)))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 28)
+
                     Button {
                         dismiss()
                     } label: {
-                        Text(model.loc("Fertig", "Done"))
+                        Text("Done")
                             .font(.system(size: 17, weight: .bold))
                             .kerning(1.6)
                             .textCase(.uppercase)
@@ -400,16 +432,122 @@ struct JournalPromptSheet: View {
                             .background(Capsule().fill(Color.white))
                             .foregroundStyle(Color.black)
                     }
-                    .padding(.top, 6)
+                    .buttonStyle(.plain)
+                    .padding(.top, 12)
                 }
                 .padding(20)
             }
             .background(Theme.bg)
             .navigationTitle("Journal")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showPicker) {
+                BehaviorPickerSheet()
+            }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .preferredColorScheme(.dark)
+    }
+}
+
+struct JournalProgressBar: View {
+    let answered: Int
+    let total: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                CapsLabel(text: "Answered", size: 13)
+                Spacer()
+                Text("\(answered) of \(total)")
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.08))
+                    Capsule()
+                        .fill(answered >= total && total > 0 ? Theme.green : Theme.accent)
+                        .frame(width: total > 0 ? geo.size.width * CGFloat(answered) / CGFloat(total) : 0)
+                }
+            }
+            .frame(height: 6)
+        }
+    }
+}
+
+/// Choose which behaviors the journal asks about.
+struct BehaviorPickerSheet: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var search = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("Tracking \(model.trackedBehaviorIDs.count). Track \(JournalCatalog.recommendedMax) or fewer at a time for clearer results.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(model.trackedBehaviorIDs.count > JournalCatalog.recommendedMax ? Theme.orange : Theme.textSecondary)
+                        .listRowBackground(Color.clear)
+                }
+                ForEach(JournalCategory.allCases) { category in
+                    let items = filtered.filter { $0.category == category }
+                    if !items.isEmpty {
+                        Section(category.title) {
+                            ForEach(items) { behavior in
+                                row(behavior)
+                            }
+                        }
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .searchable(text: $search, prompt: "Search behaviors")
+            .navigationTitle("Behaviors")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var filtered: [JournalBehavior] {
+        let query = search.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return JournalCatalog.all }
+        return JournalCatalog.all.filter {
+            $0.title.lowercased().contains(query) || $0.question.lowercased().contains(query)
+        }
+    }
+
+    private func row(_ behavior: JournalBehavior) -> some View {
+        let tracked = model.isTracked(behavior.id)
+        return Button {
+            model.toggleTracked(behavior.id)
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: behavior.symbol)
+                    .font(.system(size: 17))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(width: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(behavior.title)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(behavior.question)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+                Image(systemName: tracked ? "checkmark.circle.fill" : "plus.circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(tracked ? Theme.green : Theme.textSecondary)
+            }
+        }
+        .listRowBackground(Theme.card)
     }
 }
 

@@ -31,29 +31,6 @@ public enum PulseLanguage: String, Codable, CaseIterable, Sendable, Identifiable
 
 // MARK: - Lokalisierte Labels der Core-Typen
 
-public extension JournalFactor {
-    func label(_ lang: PulseLanguage) -> String {
-        switch (self, lang) {
-        case (.alcohol, .de): return "Alkohol"
-        case (.alcohol, .en): return "Alcohol"
-        case (.lateCaffeine, .de): return "Koffein spät"
-        case (.lateCaffeine, .en): return "Late caffeine"
-        case (.lateMeal, .de): return "Spätes Essen"
-        case (.lateMeal, .en): return "Late meal"
-        case (.stress, .de): return "Stress"
-        case (.stress, .en): return "Stress"
-        case (.sick, .de): return "Krank"
-        case (.sick, .en): return "Sick"
-        case (.screenBeforeBed, .de): return "Bildschirm vor dem Schlaf"
-        case (.screenBeforeBed, .en): return "Screen before bed"
-        case (.exercised, .de): return "Trainiert"
-        case (.exercised, .en): return "Worked out"
-        case (.sex, .de): return "Sex"
-        case (.sex, .en): return "Sex"
-        }
-    }
-}
-
 public extension BiologicalSex {
     func label(_ lang: PulseLanguage) -> String {
         switch (self, lang) {

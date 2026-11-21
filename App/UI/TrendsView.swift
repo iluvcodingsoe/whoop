@@ -51,7 +51,7 @@ struct TrendsView: View {
             let ready = model.recoveryDayCount >= JournalEngine.assessmentMinRecoveryDays
             if model.journalInsights.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    EmptyDataHint(text: model.loc("Hake im Tab Heute deine Faktoren ab. Ein Zusammenhang erscheint, sobald ein Faktor an mind. 5 Tagen an- UND 5 Tagen abgehakt war.", "Check off factors in the Today tab. A correlation appears once a factor was checked on at least 5 days AND unchecked on 5 days."))
+                    EmptyDataHint(text: model.loc("Hake im Tab Heute deine Faktoren ab. Ein Zusammenhang erscheint, sobald ein Faktor an mind. 5 Tagen an- UND 5 Tagen abgehakt war.", "Answer your journal in the Journal tab. A correlation appears once a behavior has at least 5 yes AND 5 no answers in the last 90 days."))
                     if !ready {
                         assessmentProgress
                     }
@@ -61,7 +61,7 @@ struct TrendsView: View {
                     ForEach(model.journalInsights) { insight in
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
-                                Label(insight.factor.label(model.language), systemImage: insight.factor.symbol)
+                                Label(insight.title, systemImage: insight.symbol)
                                     .font(.subheadline)
                                     .foregroundStyle(Theme.textPrimary)
                                 Text(insight.confidence == .solid ? model.loc("belastbar", "solid") : model.loc("Tendenz", "trend"))
