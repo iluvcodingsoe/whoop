@@ -51,7 +51,7 @@ enum PulseNotifications {
         comps.minute = minute
         let content = UNMutableNotificationContent()
         content.title = de ? "Guten Morgen ☀️" : "Good morning ☀️"
-        content.body = de ? "Öffne Pulse kurz – dann stehen Recovery und Schlafanalyse für heute bereit." : "Open Pulse briefly – recovery and sleep analysis for today will be ready."
+        content.body = de ? "Öffne Pulse kurz – dann stehen Recovery und Schlafanalyse für heute bereit." : "Open Pulse for your recovery and fill out your morning journal."
         content.sound = .default
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         // Gleiche ID ersetzt die bestehende Planung (auch die für heute).
@@ -73,7 +73,7 @@ enum PulseNotifications {
         guard fireDate.timeIntervalSinceNow > 5 * 60 else { return }
         let content = UNMutableNotificationContent()
         content.title = de ? "Schlafenszeit rückt näher 🌙" : "Bedtime is approaching 🌙"
-        content.body = de ? "Ziel heute: bis \(Fmt.clockFromMinutes(bedtimeMinutes)) Uhr ins Bett für deine volle Erholung." : "Tonight\u{2019}s goal: in bed by \(Fmt.clockFromMinutes(bedtimeMinutes)) for full recovery."
+        content.body = de ? "Ziel heute: bis \(Fmt.clockFromMinutes(bedtimeMinutes)) Uhr ins Bett für deine volle Erholung." : "Fill out your evening journal and be in bed by \(Fmt.clockFromMinutes(bedtimeMinutes))."
         content.sound = .default
         let fireComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: fireComps, repeats: false)

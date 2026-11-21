@@ -21,6 +21,34 @@ public enum JournalCategory: String, CaseIterable, Sendable, Identifiable {
     }
 }
 
+/// When a question is asked. Morning questions are about the night before,
+/// evening questions about the day. Both are stored under the day the night
+/// started, so they line up with the next morning's recovery.
+public enum JournalTime: String, CaseIterable, Sendable, Identifiable {
+    case morning, evening
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .morning: return "Morning"
+        case .evening: return "Evening"
+        }
+    }
+
+    public var symbol: String {
+        switch self {
+        case .morning: return "sunrise.fill"
+        case .evening: return "moon.stars.fill"
+        }
+    }
+
+    /// Storage key for a journal filled out on `dayKey`.
+    public func storageKey(forDay dayKey: String) -> String {
+        self == .morning ? DayKey.addDays(dayKey, -1) : dayKey
+    }
+}
+
 /// One yes/no question in the journal.
 public struct JournalBehavior: Identifiable, Hashable, Sendable {
     public let id: String
@@ -28,6 +56,8 @@ public struct JournalBehavior: Identifiable, Hashable, Sendable {
     public let question: String
     public let symbol: String
     public let category: JournalCategory
+
+    public var time: JournalTime { JournalCatalog.morningIDs.contains(id) ? .morning : .evening }
 }
 
 /// All behaviors that can be tracked. Ids of the original eight factors are kept
@@ -80,6 +110,8 @@ public enum JournalCatalog {
             ("water3l", "Lots of water", "Drink over 2 liters of water?", "drop.fill", .nutrition),
             ("homeCooked", "Home-cooked meals", "Eat mostly home-cooked meals?", "frying.pan", .nutrition),
             // Sleep
+            ("noseStrips", "Nasal strips", "Wear nasal strips to bed?", "nose", .sleep),
+            ("retainers", "Retainers", "Wear your retainers to bed?", "mouth", .sleep),
             ("readInBed", "Read in bed", "Read (non-screened device) while in bed?", "book.closed", .sleep),
             ("sharedBed", "Shared bed", "Share your bed?", "bed.double", .sleep),
             ("petInBed", "Pet in bed", "Sleep with a pet in the bed?", "pawprint", .sleep),
@@ -154,8 +186,14 @@ public enum JournalCatalog {
 
     public static func behavior(_ id: String) -> JournalBehavior? { byID[id] }
 
+    /// Questions for the morning journal, about the night before.
+    public static let morningIDs: Set<String> = [
+        "noseStrips", "retainers", "screenBeforeBed", "readInBed", "sharedBed", "petInBed", "sleepMask", "earplugs",
+        "whiteNoise", "coolRoom", "consistentBedtime", "lateNight", "phoneOutside", "darkRoom", "woke", "alarmClock", "melatonin",
+    ]
+
     /// Starting set for new users.
-    public static let defaultIDs = ["alcohol", "lateCaffeine", "lateMeal", "screenBeforeBed", "stress", "exercised", "stretching", "hydrated"]
+    public static let defaultIDs = ["noseStrips", "retainers", "screenBeforeBed", "woke", "alcohol", "lateCaffeine", "lateMeal", "stress", "exercised", "stretching", "hydrated"]
 
     /// The eight factors of the old journal (stored as a set without explicit "no").
     public static let legacyIDs = ["alcohol", "lateCaffeine", "lateMeal", "stress", "sick", "screenBeforeBed", "exercised", "sex"]

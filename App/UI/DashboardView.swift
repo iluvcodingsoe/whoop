@@ -286,9 +286,14 @@ struct HomeView: View {
                 Spacer()
                 Menu {
                     Button {
-                        model.journalPromptDay = model.selectedDayKey
+                        model.journalPrompt = JournalPrompt(time: .morning, day: model.selectedDayKey)
                     } label: {
-                        Label("Check-in", systemImage: "checkmark.circle")
+                        Label("Morning journal", systemImage: JournalTime.morning.symbol)
+                    }
+                    Button {
+                        model.journalPrompt = JournalPrompt(time: .evening, day: model.selectedDayKey)
+                    } label: {
+                        Label("Evening journal", systemImage: JournalTime.evening.symbol)
                     }
                     ForEach(LogKind.allCases) { kind in
                         Button {

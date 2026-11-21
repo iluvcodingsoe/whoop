@@ -6,7 +6,7 @@ name: screenshots
 
 on:
   push:
-    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget, health-tiles, year-review, journal-redesign]
+    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget, health-tiles, year-review, journal-redesign, morning-evening-journal]
   workflow_dispatch:
 
 permissions:
