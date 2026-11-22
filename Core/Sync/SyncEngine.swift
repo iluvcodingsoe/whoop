@@ -383,6 +383,16 @@ public final class SyncEngine: @unchecked Sendable {
 
         progress?(SyncProgress(message: "Loading heart rate… (0/\(keysToLoad.count) days)", fraction: 0))
 
+        // Days already partly loaded only fetch what came after the last sample
+        // (10 min overlap), instead of the whole day again.
+        var fetchFrom: [String: Date] = [:]
+        for key in keysToLoad {
+            if let record = days[key], record.hrSyncedAt != nil, let last = record.hrSamples.map(\.t).max() {
+                fetchFrom[key] = last.addingTimeInterval(-10 * 60)
+            }
+        }
+        let resumePoints = fetchFrom
+
         let client = self.client
         var loaded = 0
         var failed = 0
@@ -391,8 +401,9 @@ public final class SyncEngine: @unchecked Sendable {
 
         await withTaskGroup(of: (String, Result<[SamplePoint], Error>).self) { group in
             @Sendable func fetchDay(_ key: String) async -> (String, Result<[SamplePoint], Error>) {
-                guard let dayStart = DayKey.date(from: key) else { return (key, .success([])) }
-                let dayEnd = min(dayStart.addingTimeInterval(24 * 3600), windowEnd)
+                guard let midnight = DayKey.date(from: key) else { return (key, .success([])) }
+                let dayEnd = min(midnight.addingTimeInterval(24 * 3600), windowEnd)
+                let dayStart = max(midnight, resumePoints[key] ?? midnight)
                 guard dayEnd > dayStart else { return (key, .success([])) }
                 do {
                     let samples = try await client.fetchSamples(
@@ -419,7 +430,13 @@ public final class SyncEngine: @unchecked Sendable {
                 case .success(let samples):
                     var record = days[key] ?? DayRecord(date: key)
                     if !samples.isEmpty {
-                        record.hrSamples = Self.removeSpikes(Self.downsampleToMinutes(samples))
+                        let fresh = Self.downsampleToMinutes(samples)
+                        if let from = resumePoints[key], let firstNew = fresh.map(\.t).min() {
+                            let kept = record.hrSamples.filter { $0.t < min(from, firstNew) }
+                            record.hrSamples = Self.removeSpikes((kept + fresh).sorted { $0.t < $1.t })
+                        } else {
+                            record.hrSamples = Self.removeSpikes(fresh)
+                        }
                         record.syncedAt = syncStamp
                         loaded += 1
                     }

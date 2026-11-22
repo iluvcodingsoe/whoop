@@ -875,12 +875,13 @@ final class AppModel {
     }
 
     /// Days to fetch on a normal sync: the full range once, then only the
-    /// days since the last sync plus a small overlap for late-arriving data.
+    /// days since the last sync.
     private func incrementalDaysBack() -> Int {
         let backfilled = defaults.integer(forKey: Keys.backfilledDays)
         guard let lastSyncAt, !store.days.isEmpty, backfilled >= daysBack else { return daysBack }
         let since = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: lastSyncAt), to: Date()).day ?? daysBack
-        return min(daysBack, max(3, since + 3))
+        // Only the days since the last sync (today counts as one).
+        return min(daysBack, max(1, since + 1))
     }
 
     /// Fetches the whole backfill range again.
@@ -1024,7 +1025,7 @@ final class AppModel {
     func performBackgroundRefresh() async {
         scheduleBackgroundRefresh() // sofort den nächsten Lauf einplanen
         guard isConnected else { return }
-        await syncNow(daysBackOverride: 3, hrDaysBackOverride: 1)
+        await syncNow(hrDaysBackOverride: 1)
         guard notificationsEnabled, await PulseNotifications.isAuthorized() else { return }
         let today = DayKey.today()
         if let rec = recovery(for: today) {
