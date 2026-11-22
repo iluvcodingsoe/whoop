@@ -25,7 +25,7 @@ struct RootView: View {
 
 /// Die vier Hauptbereiche der App.
 enum MainTab: String, CaseIterable, Identifiable {
-    case home, health, journal, more
+    case home, health, strength, journal, more
 
     var id: String { rawValue }
 
@@ -33,6 +33,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "house"
         case .health: return "heart.text.square"
+        case .strength: return "dumbbell"
         case .journal: return "square.and.pencil"
         case .more: return "line.3.horizontal"
         }
@@ -42,6 +43,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "house.fill"
         case .health: return "heart.text.square.fill"
+        case .strength: return "dumbbell.fill"
         case .journal: return "square.and.pencil"
         case .more: return "line.3.horizontal"
         }
@@ -51,6 +53,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return model.loc("Start", "Home")
         case .health: return model.loc("Gesundheit", "Health")
+        case .strength: return "Strength"
         case .journal: return "Journal"
         case .more: return model.loc("Mehr", "More")
         }
@@ -71,6 +74,10 @@ struct MainTabs: View {
                 .contentMargins(.bottom, 100, for: .scrollContent)
                 .tag(MainTab.health)
                 .toolbar(.hidden, for: .tabBar)
+            StrengthView()
+                .contentMargins(.bottom, 100, for: .scrollContent)
+                .tag(MainTab.strength)
+                .toolbar(.hidden, for: .tabBar)
             JournalView()
                 .contentMargins(.bottom, 100, for: .scrollContent)
                 .tag(MainTab.journal)
@@ -82,6 +89,9 @@ struct MainTabs: View {
         }
         .overlay(alignment: .bottom) {
             FloatingTabBar(selection: $model.selectedTab)
+        }
+        .fullScreenCover(isPresented: $model.showStrengthLogger) {
+            StrengthLoggerView()
         }
     }
 }

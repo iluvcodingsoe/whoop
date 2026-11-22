@@ -17,6 +17,7 @@ final class AppModel {
         static let demoMode = "app.demoMode"
         static let daysBack = "sync.daysBack"
         static let journalBehaviors = "journal.behaviors"
+        static let usePounds = "units.pounds"
         static let hrDaysBack = "sync.hrDaysBack"
         static let sleepNeed = "calc.sleepNeedMinutes"
         static let age = "calc.age"
@@ -112,6 +113,10 @@ final class AppModel {
     var weightKg: Double {
         didSet { defaults.set(weightKg, forKey: Keys.weightKg) }
     }
+    /// Show strength weights in pounds (stored in kg).
+    var usePounds: Bool {
+        didSet { defaults.set(usePounds, forKey: Keys.usePounds) }
+    }
     /// 0 = automatisch (Tanaka-Formel)
     var maxHROverride: Double {
         didSet {
@@ -187,6 +192,16 @@ final class AppModel {
     let store: MetricsStore
     let journal: JournalStore
     let dailyLogs: DailyLogStore
+    let strength: StrengthStore
+    /// Finished strength workouts, oldest first.
+    var strengthWorkouts: [StrengthWorkout] = []
+    var strengthTemplates: [StrengthTemplate] = []
+    /// Workout being logged right now.
+    var activeStrength: StrengthWorkout?
+    var showStrengthLogger = false
+    var strengthScores: [UUID: StrengthScore] = [:]
+    /// Logged activity to remove once its exercises are saved.
+    var pendingReplaceActivity: (UUID, String)?
     let auth = GoogleAuth()
     private(set) var strainResults: [String: StrainResult] = [:]
     private(set) var sleepAnalyses: [String: SleepAnalysis] = [:]
@@ -211,6 +226,7 @@ final class AppModel {
         store = MetricsStore(directory: directory)
         journal = JournalStore(directory: directory)
         dailyLogs = DailyLogStore(directory: directory)
+        strength = StrengthStore(directory: directory)
 
         // Lokale Konstante, damit unten nicht self.language (Observable-Getter)
         // gelesen wird, bevor alle Stored Properties initialisiert sind.
@@ -240,6 +256,7 @@ final class AppModel {
         stepGoal = (defaults.object(forKey: Keys.stepGoal) as? Int) ?? 8000
         plannedBedtimeMinutes = defaults.object(forKey: Keys.plannedBedtime) as? Int
         weightKg = (defaults.object(forKey: Keys.weightKg) as? Double) ?? 75
+        usePounds = (defaults.object(forKey: Keys.usePounds) as? Bool) ?? true
         maxHROverride = (defaults.object(forKey: Keys.maxHR) as? Double) ?? 0
         lastSyncAt = (defaults.object(forKey: Keys.lastSync) as? Double).map(Date.init(timeIntervalSince1970:))
         notificationsEnabled = defaults.bool(forKey: Keys.notifications)
@@ -258,6 +275,7 @@ final class AppModel {
                 .compactMap(DashboardModule.init(rawValue:))
         )
 
+        refreshStrength(recompute: false)
         recomputeAll()
         applyScreenshotArguments()
     }
@@ -279,6 +297,11 @@ final class AppModel {
         // Ein paar Beispiel-Einträge, damit das Journal nicht leer aussieht.
         let today = DayKey.today()
         seedDemoJournal(today: today)
+        seedDemoStrength(today: today)
+        if args.contains("-screenshotStrengthActive") {
+            startStrength(template: strengthTemplates.first)
+            seedActiveDemoSets()
+        }
         if args.contains("-screenshotJournal") {
             journalPrompt = JournalPrompt(time: .morning, day: today)
         }
@@ -577,6 +600,7 @@ final class AppModel {
             workout.strain = StrainEngine.workoutStrain(workout: workout, daySamples: samples, restingHR: record?.restingHR, config: strainConfig)
             list.append(workout)
         }
+        addStrengthWorkouts(to: &list, on: key, samples: samples, restingHR: record?.restingHR)
         return list.sorted { $0.start < $1.start }
     }
 
@@ -691,8 +715,20 @@ final class AppModel {
     func recomputeAll() {
         var strains: [String: StrainResult] = [:]
         var strainScalar: [String: Double] = [:]
+        let muscular = muscularRawByDay()
         for (key, record) in store.days {
-            let result = StrainEngine.dayStrain(record: record, restingHR: record.restingHR, config: strainConfig)
+            var result = StrainEngine.dayStrain(record: record, restingHR: record.restingHR, config: strainConfig)
+            if let extra = muscular[key], extra > 0 {
+                let raw = result.rawLoad + extra
+                result = StrainResult(
+                    strain: StrainEngine.strain(fromRaw: raw, tau: strainConfig.tau),
+                    rawLoad: raw,
+                    zoneMinutes: result.zoneMinutes,
+                    restMinutes: result.restMinutes,
+                    avgHR: result.avgHR,
+                    peakHR: result.peakHR
+                )
+            }
             strains[key] = result
             strainScalar[key] = result.strain
         }
@@ -944,6 +980,8 @@ final class AppModel {
         store.wipe()
         journal.wipe()
         dailyLogs.wipe()
+        strength.wipe()
+        refreshStrength()
         syncLog = []
         lastSyncAt = nil
         defaults.removeObject(forKey: Keys.backfilledDays)

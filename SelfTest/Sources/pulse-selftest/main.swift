@@ -734,6 +734,45 @@ let historyCheck = reloaded.history(before: sortedKeys.last!, days: 30)
 check(historyCheck.count == 30, "history(before:) liefert 30 Tage")
 try? FileManager.default.removeItem(at: tempDir)
 
+// MARK: Strength Trainer
+
+check(Set(ExerciseCatalog.all.map(\.id)).count == ExerciseCatalog.all.count, "Exercise ids are unique")
+check(StrengthTemplate.defaults.allSatisfy { $0.entries.allSatisfy { $0.exercise != nil } }, "Templates use known exercises")
+let liftDay = Date(timeIntervalSince1970: 1_780_000_000)
+func squats(_ kg: Double, _ reps: Int, _ sets: Int, at date: Date) -> StrengthWorkout {
+    StrengthWorkout(name: "Legs", start: date, end: date.addingTimeInterval(3600), entries: [
+        StrengthEntry(exerciseID: "backSquat", sets: (0..<sets).map { _ in StrengthSet(reps: reps, weightKg: kg, done: true) })
+    ])
+}
+let lightLift = StrengthEngine.score(squats(60, 5, 3, at: liftDay), history: [], bodyweight: 70)
+let heavyLift = StrengthEngine.score(squats(100, 5, 5, at: liftDay), history: [], bodyweight: 70)
+check(heavyLift.muscularRaw > lightLift.muscularRaw, "More sets and weight mean more muscular load")
+check(abs(heavyLift.volumeKg - 2500) < 0.1, "Volume is reps x weight")
+check(heavyLift.muscleLoad[.quads] ?? 0 > heavyLift.muscleLoad[.hamstrings] ?? 0, "Primary muscles get more load than secondary")
+let calf = StrengthWorkout(name: "Calves", start: liftDay, end: liftDay, entries: [
+    StrengthEntry(exerciseID: "calfRaise", sets: (0..<5).map { _ in StrengthSet(reps: 5, weightKg: 100, done: true) })
+])
+check(StrengthEngine.score(calf, history: [], bodyweight: 70).muscularRaw < heavyLift.muscularRaw, "Squat loads more than calf raise")
+let undone = StrengthWorkout(name: "x", start: liftDay, entries: [StrengthEntry(exerciseID: "backSquat", sets: [StrengthSet(reps: 5, weightKg: 100)])])
+check(StrengthEngine.score(undone, history: [], bodyweight: 70).muscularRaw == 0, "Unchecked sets do not count")
+let earlier = squats(90, 5, 3, at: liftDay.addingTimeInterval(-7 * 86400))
+let pr = StrengthEngine.score(squats(100, 5, 3, at: liftDay), history: [earlier], bodyweight: 70)
+check(pr.personalRecords == ["backSquat"], "Heavier squat is a personal record")
+let pushUps = StrengthWorkout(name: "x", start: liftDay, end: liftDay, entries: [StrengthEntry(exerciseID: "pushUp", sets: [StrengthSet(reps: 20, weightKg: 0, done: true)])])
+check(StrengthEngine.score(pushUps, history: [], bodyweight: 70).muscularRaw > 0, "Bodyweight sets count body weight")
+check(abs(StrengthEngine.raw(fromStrain: StrainEngine.strain(fromRaw: 200)) - 200) < 0.01, "Strain curve inverse")
+let liftStrain = StrengthEngine.combinedStrain(cardioRaw: 90, muscularRaw: heavyLift.muscularRaw)
+check(liftStrain > StrainEngine.strain(fromRaw: 90) && liftStrain < 21, "Muscular load raises lifting strain")
+print("  heavy squat session: muscular raw \(Int(heavyLift.muscularRaw)), strain \(String(format: "%.1f", liftStrain))")
+let progress = StrengthEngine.progress(for: "backSquat", in: [squats(100, 5, 3, at: liftDay), earlier], bodyweight: 70)
+check(progress.count == 2 && progress[0].value < progress[1].value, "Progress is sorted and rising")
+let strengthDir = FileManager.default.temporaryDirectory.appendingPathComponent("pulse-strength-\(UUID().uuidString)")
+let sStore = StrengthStore(directory: strengthDir)
+sStore.upsert(squats(100, 5, 3, at: liftDay))
+sStore.save()
+check(StrengthStore(directory: strengthDir).workouts.count == 1, "Strength workouts survive a reload")
+try? FileManager.default.removeItem(at: strengthDir)
+
 // MARK: Ergebnis
 
 print("")
