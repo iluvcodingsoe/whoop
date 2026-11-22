@@ -62,7 +62,11 @@ struct StrengthView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
                 let args = ProcessInfo.processInfo.arguments
-                if args.contains("-screenshotStrengthDetail"), let last = model.strengthWorkouts.last {
+                if args.contains("-screenshotTemplateEditor") {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        model.editingTemplate = model.strengthTemplates.first
+                    }
+                } else if args.contains("-screenshotStrengthDetail"), let last = model.strengthWorkouts.last {
                     path = [.workout(last.id)]
                 } else if args.contains("-screenshotStrengthExercise"), let id = model.recentExercises.first {
                     path = [.exercise(id)]
@@ -147,6 +151,28 @@ struct StrengthView: View {
     private var templates: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
+                Button {
+                    model.editingTemplate = StrengthTemplate(name: "", entries: [])
+                } label: {
+                    VStack(spacing: 12) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundStyle(Theme.textPrimary)
+                            .frame(width: 56, height: 56)
+                            .background(Circle().fill(Color.white.opacity(0.08)))
+                        Text("Create\nTemplate")
+                            .font(.system(size: 15, weight: .semibold))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    .frame(width: 130, height: 196)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+                    )
+                }
+                .buttonStyle(.plain)
+
                 ForEach(model.strengthTemplates) { template in
                     Button {
                         if model.activeStrength == nil {
@@ -178,10 +204,19 @@ struct StrengthView: View {
                             }
                             .padding(.top, 4)
                             Spacer(minLength: 0)
-                            Text("START")
-                                .font(.system(size: 12, weight: .bold))
-                                .kerning(1.2)
-                                .foregroundStyle(Theme.strainBlue)
+                            HStack {
+                                Text("START")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .kerning(1.2)
+                                    .foregroundStyle(Theme.strainBlue)
+                                Spacer()
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(Theme.textSecondary)
+                                    .frame(width: 32, height: 28)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { model.editingTemplate = template }
+                            }
                         }
                         .padding(16)
                         .frame(width: 190, height: 196, alignment: .topLeading)
@@ -189,6 +224,11 @@ struct StrengthView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
+                        Button {
+                            model.editingTemplate = template
+                        } label: {
+                            Label("Edit template", systemImage: "pencil")
+                        }
                         Button(role: .destructive) {
                             model.deleteTemplate(template.id)
                         } label: {

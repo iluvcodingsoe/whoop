@@ -534,3 +534,270 @@ struct ExercisePickerSheet: View {
         .buttonStyle(.plain)
     }
 }
+
+// MARK: - Vorlagen-Editor
+
+/// Build or edit a workout template: name, exercises, and planned sets.
+struct TemplateEditorView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var template: StrengthTemplate
+    @State private var showPicker = false
+    @State private var confirmDelete = false
+    private let isNew: Bool
+
+    init(template: StrengthTemplate) {
+        _template = State(initialValue: template)
+        isNew = template.name.isEmpty && template.entries.isEmpty
+    }
+
+    private var canSave: Bool {
+        !template.name.trimmingCharacters(in: .whitespaces).isEmpty && !template.entries.isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                ScreenBackground()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        TextField("Template name", text: $template.name)
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                            .submitLabel(.done)
+                        Text("Add exercises and the sets you plan to do. Weights fill in from your last session when you start it.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 6)
+
+                        ForEach($template.entries) { $entry in
+                            TemplateExerciseCard(entry: $entry) {
+                                template.entries.removeAll { $0.id == entry.id }
+                            } onMove: { offset in
+                                move(entry.id, by: offset)
+                            }
+                            .padding(.top, 16)
+                        }
+
+                        Button {
+                            showPicker = true
+                        } label: {
+                            Label("Add Exercise", systemImage: "plus")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(Theme.strainBlue)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 54)
+                                .background(Capsule().fill(Theme.strainBlue.opacity(0.14)))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 22)
+
+                        if !isNew {
+                            Button {
+                                confirmDelete = true
+                            } label: {
+                                Text("Delete Template")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Theme.red)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, 8)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 40)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .scrollIndicators(.hidden)
+            }
+            .navigationTitle(isNew ? "New Template" : "Edit Template")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        hideKeyboard()
+                        template.name = template.name.trimmingCharacters(in: .whitespaces)
+                        model.saveTemplate(template)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .disabled(!canSave)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { hideKeyboard() }
+                }
+            }
+            .sheet(isPresented: $showPicker) {
+                ExercisePickerSheet { id in
+                    let timed = ExerciseCatalog.exercise(id)?.measure == .seconds
+                    let last = model.lastSets(for: id)
+                    let sets = last.isEmpty
+                        ? (0..<3).map { _ in StrengthSet(reps: timed ? 30 : 8, weightKg: 0) }
+                        : last.map { StrengthSet(reps: $0.reps, weightKg: $0.weightKg) }
+                    template.entries.append(StrengthEntry(exerciseID: id, sets: sets))
+                }
+            }
+            .confirmationDialog("Delete this template?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Delete", role: .destructive) {
+                    model.deleteTemplate(template.id)
+                    dismiss()
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .tint(Theme.textPrimary)
+    }
+
+    private func move(_ id: UUID, by offset: Int) {
+        guard let i = template.entries.firstIndex(where: { $0.id == id }) else { return }
+        let j = i + offset
+        guard template.entries.indices.contains(j) else { return }
+        template.entries.swapAt(i, j)
+    }
+}
+
+struct TemplateExerciseCard: View {
+    @Environment(AppModel.self) private var model
+    @Binding var entry: StrengthEntry
+    var onRemove: () -> Void
+    var onMove: (Int) -> Void
+
+    var body: some View {
+        let exercise = entry.exercise
+        let timed = exercise?.measure == .seconds
+        let usesBodyweight = (exercise?.bodyweightFraction ?? 0) > 0
+
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(exercise?.name ?? entry.exerciseID)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Theme.strainBlue)
+                    if let exercise {
+                        Text(exercise.primary.map(\.title).joined(separator: ", "))
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                }
+                Spacer()
+                Menu {
+                    Button { onMove(-1) } label: { Label("Move up", systemImage: "arrow.up") }
+                    Button { onMove(1) } label: { Label("Move down", systemImage: "arrow.down") }
+                    Button(role: .destructive, action: onRemove) { Label("Remove exercise", systemImage: "trash") }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                }
+            }
+
+            HStack(spacing: 8) {
+                columnHeader("SET").frame(width: 30)
+                Spacer()
+                columnHeader(usesBodyweight ? "+\(model.weightUnit.uppercased())" : model.weightUnit.uppercased()).frame(width: 80)
+                columnHeader(timed ? "SEC" : "REPS").frame(width: 64)
+                Color.clear.frame(width: 30, height: 1)
+            }
+
+            ForEach(Array(entry.sets.enumerated()), id: \.element.id) { index, set in
+                TemplateSetRow(number: index + 1, set: set) { updated in
+                    if let i = entry.sets.firstIndex(where: { $0.id == set.id }) { entry.sets[i] = updated }
+                } onDelete: {
+                    entry.sets.removeAll { $0.id == set.id }
+                }
+            }
+
+            Button {
+                let last = entry.sets.last
+                entry.sets.append(StrengthSet(reps: last?.reps ?? (timed ? 30 : 8), weightKg: last?.weightKg ?? 0))
+            } label: {
+                Label("Add Set", systemImage: "plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.07)))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.card.opacity(0.75)))
+    }
+
+    private func columnHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .bold))
+            .kerning(0.8)
+            .foregroundStyle(Theme.textSecondary)
+            .lineLimit(1)
+    }
+}
+
+struct TemplateSetRow: View {
+    @Environment(AppModel.self) private var model
+    let number: Int
+    let set: StrengthSet
+    var onChange: (StrengthSet) -> Void
+    var onDelete: () -> Void
+
+    @State private var weightText = ""
+    @State private var repsText = ""
+    @State private var loaded = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("\(number)")
+                .font(.system(size: 15, weight: .bold).monospacedDigit())
+                .foregroundStyle(Theme.textSecondary)
+                .frame(width: 30)
+            Spacer()
+            field($weightText, keyboard: .decimalPad).frame(width: 80)
+            field($repsText, keyboard: .numberPad).frame(width: 64)
+            Button(action: onDelete) {
+                Image(systemName: "minus.circle")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(width: 30, height: 34)
+            }
+            .buttonStyle(.plain)
+        }
+        .onAppear {
+            guard !loaded else { return }
+            loaded = true
+            weightText = set.weightKg == 0 ? "" : model.weightText(set.weightKg)
+            repsText = "\(set.reps)"
+        }
+        .onChange(of: weightText) { _, text in
+            guard text != (set.weightKg == 0 ? "" : model.weightText(set.weightKg)) else { return }
+            var updated = set
+            updated.weightKg = model.kilograms(fromDisplay: Double(text.replacingOccurrences(of: ",", with: ".")) ?? 0)
+            onChange(updated)
+        }
+        .onChange(of: repsText) { _, text in
+            let value = Int(text) ?? 0
+            guard value != set.reps else { return }
+            var updated = set
+            updated.reps = value
+            onChange(updated)
+        }
+    }
+
+    private func field(_ text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+        TextField("0", text: text)
+            .keyboardType(keyboard)
+            .multilineTextAlignment(.center)
+            .font(.system(size: 17, weight: .semibold).monospacedDigit())
+            .foregroundStyle(Theme.textPrimary)
+            .frame(height: 34)
+            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.white.opacity(0.08)))
+    }
+}

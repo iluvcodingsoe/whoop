@@ -93,6 +93,9 @@ struct MainTabs: View {
         .fullScreenCover(isPresented: $model.showStrengthLogger) {
             StrengthLoggerView()
         }
+        .sheet(item: $model.editingTemplate) { template in
+            TemplateEditorView(template: template)
+        }
     }
 }
 

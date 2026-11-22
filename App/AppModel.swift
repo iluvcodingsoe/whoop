@@ -199,6 +199,8 @@ final class AppModel {
     /// Workout being logged right now.
     var activeStrength: StrengthWorkout?
     var showStrengthLogger = false
+    /// Template open in the editor sheet.
+    var editingTemplate: StrengthTemplate?
     var strengthScores: [UUID: StrengthScore] = [:]
     /// Logged activity to remove once its exercises are saved.
     var pendingReplaceActivity: (UUID, String)?
