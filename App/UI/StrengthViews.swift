@@ -67,7 +67,9 @@ struct StrengthView: View {
             .onAppear {
                 let args = ProcessInfo.processInfo.arguments
                 if args.contains("-screenshotTemplateEditor") {
-                    editingTemplate = model.strengthTemplates.first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        editingTemplate = model.strengthTemplates.first
+                    }
                 } else if args.contains("-screenshotStrengthDetail"), let last = model.strengthWorkouts.last {
                     path = [.workout(last.id)]
                 } else if args.contains("-screenshotStrengthExercise"), let id = model.recentExercises.first {
