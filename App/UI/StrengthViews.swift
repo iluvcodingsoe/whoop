@@ -736,9 +736,6 @@ struct ExerciseProgressView: View {
                             if points.count > 1 {
                                 Chart(Array(points.enumerated()), id: \.offset) { item in
                                     let shown = timed ? item.element.value : model.displayWeight(item.element.value)
-                                    AreaMark(x: .value("Date", item.element.date), y: .value("Max", shown))
-                                        .foregroundStyle(LinearGradient(colors: [Theme.strainBlue.opacity(0.35), .clear], startPoint: .top, endPoint: .bottom))
-                                        .interpolationMethod(.monotone)
                                     LineMark(x: .value("Date", item.element.date), y: .value("Max", shown))
                                         .foregroundStyle(Theme.strainBlue)
                                         .interpolationMethod(.monotone)
