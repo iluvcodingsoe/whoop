@@ -431,6 +431,22 @@ struct ActivityDetailSheet: View {
     private var isLogged: Bool { AppModel.loggedID(workoutID) != nil }
 
     var body: some View {
+        if let strengthID = AppModel.strengthID(workoutID) {
+            NavigationStack {
+                StrengthWorkoutDetailView(workoutID: strengthID)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { dismiss() }
+                        }
+                    }
+            }
+            .preferredColorScheme(.dark)
+        } else {
+            activityBody
+        }
+    }
+
+    private var activityBody: some View {
         NavigationStack {
             List {
                 if let workout {
@@ -465,6 +481,15 @@ struct ActivityDetailSheet: View {
                             changingType = true
                         } label: {
                             Label("Change activity type", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        Button {
+                            let id = workoutID, key = dayKey, start = workout.start, end = workout.end
+                            dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                model.logExercises(forActivity: id, start: start, end: end, on: key)
+                            }
+                        } label: {
+                            Label("Log exercises for muscular load", systemImage: "dumbbell")
                         }
                         NavigationLink {
                             StrainDetailView()
