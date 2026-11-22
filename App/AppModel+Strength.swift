@@ -179,6 +179,17 @@ extension AppModel {
         strengthTemplates = strength.templates
     }
 
+    /// Adds a new template or replaces one with the same id.
+    func saveTemplate(_ template: StrengthTemplate) {
+        if let i = strength.templates.firstIndex(where: { $0.id == template.id }) {
+            strength.templates[i] = template
+        } else {
+            strength.templates.insert(template, at: 0)
+        }
+        strength.save()
+        strengthTemplates = strength.templates
+    }
+
     func deleteTemplate(_ id: UUID) {
         strength.templates.removeAll { $0.id == id }
         strength.save()

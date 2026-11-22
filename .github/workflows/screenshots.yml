@@ -6,7 +6,7 @@ name: screenshots
 
 on:
   push:
-    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget, health-tiles, year-review, journal-redesign, morning-evening-journal, strength-trainer]
+    branches: [redesign, deep-dives, whoop-style-details, sleep-plan-widget, health-tiles, year-review, journal-redesign, morning-evening-journal, strength-trainer, template-builder]
   workflow_dispatch:
 
 permissions:
@@ -70,11 +70,8 @@ jobs:
           }
           shoot 0-warmup -screenshotTab home
           shoot 1-strength -screenshotTab strength
-          shoot 2-strength-muscles -screenshotTab strength -screenshotSection muscles
-          shoot 3-strength-progress -screenshotTab strength -screenshotSection progress
-          shoot 4-strength-logger -screenshotTab strength -screenshotStrengthActive
-          shoot 5-strength-detail -screenshotTab strength -screenshotStrengthDetail
-          shoot 6-strength-exercise -screenshotTab strength -screenshotStrengthExercise
+          shoot 2-template-editor -screenshotTab strength -screenshotTemplateEditor
+          shoot 3-template-editor -screenshotTab strength -screenshotTemplateEditor
           ls -la shots
           # Absturzberichte mitnehmen, falls die App nicht startet.
           find ~/Library/Logs/DiagnosticReports -name "Pulse*" -newer build.log -exec cp {} shots/ \; 2>/dev/null || true
