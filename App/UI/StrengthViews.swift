@@ -8,7 +8,6 @@ import Charts
 struct StrengthView: View {
     @Environment(AppModel.self) private var model
     @State private var path: [StrengthRoute] = []
-    @State private var editingTemplate: StrengthTemplate?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -61,14 +60,11 @@ struct StrengthView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(item: $editingTemplate) { template in
-                TemplateEditorView(template: template)
-            }
             .onAppear {
                 let args = ProcessInfo.processInfo.arguments
                 if args.contains("-screenshotTemplateEditor") {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        editingTemplate = model.strengthTemplates.first
+                        model.editingTemplate = model.strengthTemplates.first
                     }
                 } else if args.contains("-screenshotStrengthDetail"), let last = model.strengthWorkouts.last {
                     path = [.workout(last.id)]
@@ -156,7 +152,7 @@ struct StrengthView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 Button {
-                    editingTemplate = StrengthTemplate(name: "", entries: [])
+                    model.editingTemplate = StrengthTemplate(name: "", entries: [])
                 } label: {
                     VStack(spacing: 12) {
                         Image(systemName: "plus")
@@ -219,7 +215,7 @@ struct StrengthView: View {
                                     .foregroundStyle(Theme.textSecondary)
                                     .frame(width: 32, height: 28)
                                     .contentShape(Rectangle())
-                                    .onTapGesture { editingTemplate = template }
+                                    .onTapGesture { model.editingTemplate = template }
                             }
                         }
                         .padding(16)
@@ -229,7 +225,7 @@ struct StrengthView: View {
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button {
-                            editingTemplate = template
+                            model.editingTemplate = template
                         } label: {
                             Label("Edit template", systemImage: "pencil")
                         }
