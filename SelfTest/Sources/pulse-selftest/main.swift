@@ -238,7 +238,7 @@ check(s900 > 17.5 && s900 < 19.5, "Harter Tag ≈ 17.5–19.5 (ist \(String(form
 check(s5000 < 21, "Skala bleibt unter 21 (ist \(String(format: "%.2f", s5000)))")
 check(s60 < s300 && s300 < s900 && s900 < s5000, "Strain wächst monoton mit Load")
 // 32 min: 7 very light, 9 light, 4 moderate, 1 demanding, 16 hard, 1 max (real session that read 6.4 before)
-let hardHalfHour = 7 * 0.5 + 9 * 1.0 + 4 * 2.5 + 1 * 5.0 + 16 * 8.0 + 1 * 11.0
+let hardHalfHour: Double = 3.5 + 9 + 10 + 5 + 128 + 11
 let hardHalfHourStrain = StrainEngine.strain(fromRaw: hardHalfHour)
 check(hardHalfHourStrain > 9.5 && hardHalfHourStrain < 11.5, "Hard 32 min session ≈ 10–11 (ist \(String(format: "%.1f", hardHalfHourStrain)))")
 // Strain-Ziel aus Recovery (Whoop-Bereiche: Training 14–18, locker 10–14).
