@@ -6,7 +6,7 @@ public struct StrainConfig: Sendable {
     /// Zeitkonstante der logarithmischen 0–21-Skala.
     public var tau: Double
 
-    public init(age: Int = 30, maxHROverride: Double? = nil, tau: Double = 450) {
+    public init(age: Int = 30, maxHROverride: Double? = nil, tau: Double = 290) {
         self.age = age
         self.maxHROverride = maxHROverride
         self.tau = tau
@@ -57,9 +57,21 @@ public enum StrainEngine {
     public static let zoneWeights: [Double] = [0.5, 1.0, 2.5, 5.0, 8.0, 11.0]
     public static let zoneLabels: [String] = ["Very light", "Light", "Moderate", "Demanding", "Hard", "Max"]
 
-    public static func strain(fromRaw raw: Double, tau: Double = 450) -> Double {
+    /// Shape of the 0–21 curve. Below 1 the scale rises faster for short hard
+    /// efforts and still flattens near the top (hard to push past 18).
+    /// Calibrated so ~30 min with 15+ min above 72 % HRR lands near 10–11.
+    public static let curveExponent = 0.664
+
+    public static func strain(fromRaw raw: Double, tau: Double = 290) -> Double {
         guard raw > 0 else { return 0 }
-        return 21 * (1 - exp(-raw / tau))
+        return 21 * (1 - exp(-pow(raw / tau, curveExponent)))
+    }
+
+    /// Inverse of `strain(fromRaw:)`.
+    public static func raw(fromStrain strain: Double, tau: Double = 290) -> Double {
+        let s = min(max(strain, 0), 20.99)
+        guard s > 0 else { return 0 }
+        return tau * pow(-log(1 - s / 21), 1 / curveExponent)
     }
 
     /// Tages-Belastungsziel aus der morgendlichen Recovery (wie Whoops

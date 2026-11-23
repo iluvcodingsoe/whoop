@@ -121,14 +121,13 @@ public enum StrengthEngine {
     }
 
     /// Strain of a lifting session: heart-rate load plus muscular load on the 0–21 scale.
-    public static func combinedStrain(cardioRaw: Double, muscularRaw: Double, tau: Double = 450) -> Double {
+    public static func combinedStrain(cardioRaw: Double, muscularRaw: Double, tau: Double = 290) -> Double {
         StrainEngine.strain(fromRaw: cardioRaw + muscularRaw, tau: tau)
     }
 
     /// Inverse of the strain curve: raw load behind a strain value.
-    public static func raw(fromStrain strain: Double, tau: Double = 450) -> Double {
-        let s = Stats.clamp(strain, 0, 20.99)
-        return -tau * log(1 - s / 21)
+    public static func raw(fromStrain strain: Double, tau: Double = 290) -> Double {
+        StrainEngine.raw(fromStrain: strain, tau: tau)
     }
 
     /// Hard sets per muscle in a time window (primary 1, secondary 0.5).
