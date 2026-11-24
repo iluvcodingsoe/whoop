@@ -569,6 +569,13 @@ struct StrengthWorkoutDetailView: View {
                 }
                 .padding(.top, 12)
 
+                ActivityHeartRateSections(
+                    analysis: model.activityAnalysis(start: workout.start, end: workout.end ?? workout.start),
+                    calm: false,
+                    name: workout.name
+                )
+                .padding(.top, 20)
+
                 if !score.personalRecords.isEmpty {
                     Panel(padding: 18) {
                         VStack(alignment: .leading, spacing: 10) {

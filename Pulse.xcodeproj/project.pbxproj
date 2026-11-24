@@ -51,11 +51,13 @@
 		F6C82F2B200AB78189CB467C /* DetailKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D09F242F3E635B2FBD5231 /* DetailKit.swift */; };
 		B0BD4C550A054DB67D4F181E /* StressDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76B61A43EAAA3D6C9C2C36C /* StressDetailView.swift */; };
 		E4B1DA112C0EE243FA4B8403 /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FED05483B4903E2D3EE527 /* JournalView.swift */; };
+		90E379F8BFB9DB2BE3F096B3 /* ActivityBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0BD5979E6EF9E9C8A929D1 /* ActivityBreakdownView.swift */; };
 		0D8A1A0F346EBDB332FE4716 /* StrengthLoggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303D94F925B1C7CA615310B1 /* StrengthLoggerView.swift */; };
 		F2A97208E1C9C6E43DFF1FDB /* StrengthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053D8757B49EA65DC4176FDE /* StrengthViews.swift */; };
 		295B4F2F0CD244D172E4D193 /* DesignKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF37A5FB64DABC7FF288315 /* DesignKit.swift */; };
 		E587D02744EF7F3692CAC175 /* HealthMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15BE4A5649F7868205DF9A4 /* HealthMonitor.swift */; };
 		DEC102AD3B4CFE7C90C49351 /* StressEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70DBEF734D5A143D9649243 /* StressEngine.swift */; };
+		17D93545B0F2AE5C3453732F /* ActivityAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08763042EF8B4E22BEF8817 /* ActivityAnalysis.swift */; };
 		F8B0E0CB5220869246356A65 /* StrengthEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3624CC17B4349285C1787E /* StrengthEngine.swift */; };
 		F1ABF7BAB79C5AD2D86B9B9E /* TrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1D271C269F20FB33EF4875 /* TrendsView.swift */; };
 		FA60A10A4C2B40A0FFA169F1 /* WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315207469E6BFA6F5FCD2B24 /* WidgetBridge.swift */; };
@@ -115,6 +117,7 @@
 		B0D09F242F3E635B2FBD5231 /* DetailKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailKit.swift; sourceTree = "<group>"; };
 		A76B61A43EAAA3D6C9C2C36C /* StressDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressDetailView.swift; sourceTree = "<group>"; };
 		84FED05483B4903E2D3EE527 /* JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalView.swift; sourceTree = "<group>"; };
+		EC0BD5979E6EF9E9C8A929D1 /* ActivityBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityBreakdownView.swift; sourceTree = "<group>"; };
 		303D94F925B1C7CA615310B1 /* StrengthLoggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthLoggerView.swift; sourceTree = "<group>"; };
 		053D8757B49EA65DC4176FDE /* StrengthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthViews.swift; sourceTree = "<group>"; };
 		1DF37A5FB64DABC7FF288315 /* DesignKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignKit.swift; sourceTree = "<group>"; };
@@ -139,6 +142,7 @@
 		C0B58F4D6CFB8CD7BFBF8591 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		C15BE4A5649F7868205DF9A4 /* HealthMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMonitor.swift; sourceTree = "<group>"; };
 		A70DBEF734D5A143D9649243 /* StressEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressEngine.swift; sourceTree = "<group>"; };
+		A08763042EF8B4E22BEF8817 /* ActivityAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityAnalysis.swift; sourceTree = "<group>"; };
 		EE3624CC17B4349285C1787E /* StrengthEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthEngine.swift; sourceTree = "<group>"; };
 		C9C11BCA7D6467713DB530A3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		D5F869CF6E95224BAE15673B /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
@@ -226,6 +230,7 @@
 				5FE9F9906ED3D0642B14A78F /* AgeEngine.swift */,
 				C15BE4A5649F7868205DF9A4 /* HealthMonitor.swift */,
 				A70DBEF734D5A143D9649243 /* StressEngine.swift */,
+				A08763042EF8B4E22BEF8817 /* ActivityAnalysis.swift */,
 				EE3624CC17B4349285C1787E /* StrengthEngine.swift */,
 				09EC24598F0BAC1D376F5AD8 /* RecoveryEngine.swift */,
 				AB7F9DC4414E2D205F93F472 /* SleepEngine.swift */,
@@ -270,6 +275,7 @@
 				B0D09F242F3E635B2FBD5231 /* DetailKit.swift */,
 				A76B61A43EAAA3D6C9C2C36C /* StressDetailView.swift */,
 				84FED05483B4903E2D3EE527 /* JournalView.swift */,
+				EC0BD5979E6EF9E9C8A929D1 /* ActivityBreakdownView.swift */,
 				303D94F925B1C7CA615310B1 /* StrengthLoggerView.swift */,
 				053D8757B49EA65DC4176FDE /* StrengthViews.swift */,
 				1DF37A5FB64DABC7FF288315 /* DesignKit.swift */,
@@ -419,6 +425,7 @@
 				F6C82F2B200AB78189CB467C /* DetailKit.swift in Sources */,
 				B0BD4C550A054DB67D4F181E /* StressDetailView.swift in Sources */,
 				E4B1DA112C0EE243FA4B8403 /* JournalView.swift in Sources */,
+				90E379F8BFB9DB2BE3F096B3 /* ActivityBreakdownView.swift in Sources */,
 				0D8A1A0F346EBDB332FE4716 /* StrengthLoggerView.swift in Sources */,
 				F2A97208E1C9C6E43DFF1FDB /* StrengthViews.swift in Sources */,
 				295B4F2F0CD244D172E4D193 /* DesignKit.swift in Sources */,
@@ -428,6 +435,7 @@
 				63CD41B3B7D1FC0231CDB59B /* HealthAPIClient.swift in Sources */,
 				E587D02744EF7F3692CAC175 /* HealthMonitor.swift in Sources */,
 				DEC102AD3B4CFE7C90C49351 /* StressEngine.swift in Sources */,
+				17D93545B0F2AE5C3453732F /* ActivityAnalysis.swift in Sources */,
 				F8B0E0CB5220869246356A65 /* StrengthEngine.swift in Sources */,
 				1EDE98A9D5739386FE2DE321 /* HealthMonitorView.swift in Sources */,
 				642AA1726B6C77966FB9E84E /* JSONExtract.swift in Sources */,

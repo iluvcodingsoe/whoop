@@ -96,6 +96,9 @@ struct MainTabs: View {
         .sheet(item: $model.editingTemplate) { template in
             TemplateEditorView(template: template)
         }
+        .sheet(item: $model.screenshotActivity) { ref in
+            ActivityDetailSheet(workoutID: ref.id, dayKey: ref.dayKey)
+        }
     }
 }
 

@@ -201,6 +201,8 @@ final class AppModel {
     var showStrengthLogger = false
     /// Template open in the editor sheet.
     var editingTemplate: StrengthTemplate?
+    /// Activity opened from screenshot arguments.
+    var screenshotActivity: ScreenshotActivity?
     var strengthScores: [UUID: StrengthScore] = [:]
     /// Logged activity to remove once its exercises are saved.
     var pendingReplaceActivity: (UUID, String)?
@@ -300,6 +302,18 @@ final class AppModel {
         let today = DayKey.today()
         seedDemoJournal(today: today)
         seedDemoStrength(today: today)
+        let yesterday = DayKey.addDays(today, -1)
+        if args.contains("-screenshotCalm"),
+           let day = DayKey.date(from: yesterday),
+           let start = Calendar.current.date(bySettingHour: 21, minute: 0, second: 0, of: day) {
+            addActivity(type: "Stretching", start: start, end: start.addingTimeInterval(20 * 60))
+            if let w = allWorkouts(for: yesterday).first(where: { $0.name == "Stretching" }) {
+                screenshotActivity = ScreenshotActivity(id: w.id, dayKey: yesterday)
+            }
+        } else if args.contains("-screenshotActivity"),
+                  let w = allWorkouts(for: yesterday).first(where: { !$0.id.hasPrefix("str-") }) ?? allWorkouts(for: DayKey.addDays(today, -2)).first {
+            screenshotActivity = ScreenshotActivity(id: w.id, dayKey: DayKey.string(from: w.start))
+        }
         if args.contains("-screenshotStrengthActive") {
             startStrength(template: strengthTemplates.first)
             seedActiveDemoSets()
@@ -1065,4 +1079,9 @@ struct JournalPrompt: Identifiable, Equatable {
     var id: String { "\(time.rawValue)-\(day)" }
     /// Where the answers are stored.
     var key: String { time.storageKey(forDay: day) }
+}
+
+struct ScreenshotActivity: Identifiable, Equatable {
+    let id: String
+    let dayKey: String
 }
