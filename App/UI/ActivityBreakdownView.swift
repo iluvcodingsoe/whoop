@@ -302,7 +302,6 @@ struct ActivityHRChart: View {
                     LineMark(x: .value("Time", sample.t), y: .value("bpm", sample.bpm))
                         .foregroundStyle(Color.white.opacity(0.75))
                         .lineStyle(StrokeStyle(lineWidth: 1.6))
-                        .interpolationMethod(.monotone)
                 }
                 ForEach(analysis.during, id: \.t) { sample in
                     PointMark(x: .value("Time", sample.t), y: .value("bpm", sample.bpm))
