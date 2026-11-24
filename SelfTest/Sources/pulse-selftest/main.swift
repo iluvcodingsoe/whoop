@@ -755,7 +755,7 @@ check((calmA.startHR ?? 0) > (calmA.endHR ?? 0) + 20, "Start HR above end HR")
 check(calmA.settleMinute != nil && calmA.settleMinute! > 10, "Settles near resting late in the session")
 var hardSamples: [HRSample] = []
 for m in 0...30 {
-    let bpm: Double = m <= 20 ? 175 : (m == 21 ? 150 : 135)
+    let bpm: Double = m <= 20 ? 165 : (m == 21 ? 140 : 125)
     hardSamples.append(HRSample(t: actStart.addingTimeInterval(Double(m) * 60), bpm: bpm))
 }
 let hardA = ActivityAnalysis.analyze(samples: hardSamples, start: actStart, end: actEnd, restingHR: 58, maxHR: 195)
