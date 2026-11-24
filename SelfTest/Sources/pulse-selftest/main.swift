@@ -738,6 +738,31 @@ let historyCheck = reloaded.history(before: sortedKeys.last!, days: 30)
 check(historyCheck.count == 30, "history(before:) liefert 30 Tage")
 try? FileManager.default.removeItem(at: tempDir)
 
+// MARK: Activity breakdown
+
+let actStart = Date(timeIntervalSince1970: 1_780_000_000)
+let actEnd = actStart.addingTimeInterval(20 * 60)
+var calmSamples: [HRSample] = []
+for m in -5...30 {
+    let t = actStart.addingTimeInterval(Double(m) * 60)
+    let bpm: Double = m < 0 ? 95 : (m <= 20 ? 95 - Double(m) * 1.5 : 62)
+    calmSamples.append(HRSample(t: t, bpm: bpm))
+}
+let calmA = ActivityAnalysis.analyze(samples: calmSamples, start: actStart, end: actEnd, restingHR: 58, maxHR: 195)
+check(calmA.hasData && calmA.during.count == 21, "Activity window has the samples inside")
+check((calmA.trendPerMinute ?? 0) < -1, "Calming activity has a falling trend")
+check((calmA.startHR ?? 0) > (calmA.endHR ?? 0) + 20, "Start HR above end HR")
+check(calmA.settleMinute != nil && calmA.settleMinute! > 10, "Settles near resting late in the session")
+var hardSamples: [HRSample] = []
+for m in 0...30 {
+    let bpm: Double = m <= 20 ? 165 : (m == 21 ? 140 : 125)
+    hardSamples.append(HRSample(t: actStart.addingTimeInterval(Double(m) * 60), bpm: bpm))
+}
+let hardA = ActivityAnalysis.analyze(samples: hardSamples, start: actStart, end: actEnd, restingHR: 58, maxHR: 195)
+check(abs((hardA.recovery1 ?? 0) - 25) < 0.1, "1-minute heart-rate recovery")
+check(abs((hardA.recovery2 ?? 0) - 40) < 0.1, "2-minute heart-rate recovery")
+check(hardA.zoneMinutes[4] > 15, "Hard session lands in the Hard zone")
+
 // MARK: Strength Trainer
 
 check(Set(ExerciseCatalog.all.map(\.id)).count == ExerciseCatalog.all.count, "Exercise ids are unique")

@@ -421,14 +421,10 @@ struct ActivityDetailSheet: View {
 
     @State private var changingType = false
     @State private var confirmDelete = false
-    @State private var start = Date()
-    @State private var end = Date()
 
     private var workout: Workout? {
         model.allWorkouts(for: dayKey).first { $0.id == workoutID }
     }
-
-    private var isLogged: Bool { AppModel.loggedID(workoutID) != nil }
 
     var body: some View {
         if let strengthID = AppModel.strengthID(workoutID) {
@@ -448,86 +444,30 @@ struct ActivityDetailSheet: View {
 
     private var activityBody: some View {
         NavigationStack {
-            List {
+            ZStack {
+                ScreenBackground()
                 if let workout {
-                    Section {
-                        HStack(spacing: 16) {
-                            Image(systemName: ActivityCatalog.symbol(for: workout.name))
-                                .font(.system(size: 26))
-                                .foregroundStyle(Theme.strainBlue)
-                                .frame(width: 44, height: 44)
-                                .background(Circle().fill(Theme.strainBlue.opacity(0.15)))
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(workout.name)
-                                    .font(.system(size: 20, weight: .semibold))
-                                Text("\(Fmt.clock(workout.start)) – \(Fmt.clock(workout.end)) · \(Int(workout.durationMinutes.rounded())) min")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                        LabeledContent("Strain", value: workout.strain.map { String(format: "%.1f", $0) } ?? "–")
-                        if let hr = workout.averageHR {
-                            LabeledContent("Average heart rate", value: "\(Int(hr.rounded())) bpm")
-                        }
-                        if let kcal = workout.calories {
-                            LabeledContent("Calories", value: "\(Int(kcal.rounded())) kcal")
-                        }
-                        LabeledContent("Source", value: isLogged ? "Logged by you" : "Detected by Google Health")
-                    }
-
-                    Section {
-                        Button {
-                            changingType = true
-                        } label: {
-                            Label("Change activity type", systemImage: "arrow.triangle.2.circlepath")
-                        }
-                        Button {
+                    ActivityBreakdownView(
+                        workout: workout,
+                        dayKey: dayKey,
+                        onChangeType: { changingType = true },
+                        onLogExercises: {
                             let id = workoutID, key = dayKey, start = workout.start, end = workout.end
                             dismiss()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                                 model.logExercises(forActivity: id, start: start, end: end, on: key)
                             }
-                        } label: {
-                            Label("Log exercises for muscular load", systemImage: "dumbbell")
-                        }
-                        NavigationLink {
-                            StrainDetailView()
-                        } label: {
-                            Label("View strain details", systemImage: "chart.bar")
-                        }
-                    }
-
-                    if isLogged {
-                        Section("Time") {
-                            DatePicker("Start", selection: $start, in: ...Date())
-                            DatePicker("End", selection: $end, in: start...Date())
-                            Button("Save times") {
-                                model.updateActivityTimes(workoutID, start: start, end: end, on: dayKey)
-                            }
-                        }
-                    }
-
-                    Section {
-                        Button(role: .destructive) {
-                            confirmDelete = true
-                        } label: {
-                            Label("Delete activity", systemImage: "trash")
-                        }
-                    } footer: {
-                        if !isLogged {
-                            Text("Deleting hides it in Pulse. It stays in Google Health and won\u{2019}t come back on the next sync.")
-                        }
-                    }
+                        },
+                        onDelete: { confirmDelete = true }
+                    )
                 } else {
                     Text("This activity no longer exists.")
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Theme.bg.ignoresSafeArea())
             .navigationTitle("Activity")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -542,12 +482,6 @@ struct ActivityDetailSheet: View {
                 Button("Delete", role: .destructive) {
                     model.deleteWorkout(workoutID, on: dayKey)
                     dismiss()
-                }
-            }
-            .onAppear {
-                if let workout {
-                    start = workout.start
-                    end = workout.end
                 }
             }
         }
