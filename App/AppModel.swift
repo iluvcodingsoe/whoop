@@ -628,7 +628,7 @@ final class AppModel {
         return StressEngine.compute(record: record, restingHR: record.restingHR, maxHR: strainConfig.maxHR)
     }
 
-    private func recomputeJournalInsights() {
+    func recomputeJournalInsights() {
         journalEntries = journal.entries
         dayLogs = dailyLogs.logs
         let recoveryByDay = recoveryResults.mapValues { $0.score }
