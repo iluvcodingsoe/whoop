@@ -68,6 +68,9 @@ struct OnboardingView: View {
 
             Spacer()
 
+            RestoreBackupButton()
+                .padding(.bottom, 14)
+
             Button {
                 step = 1
             } label: {

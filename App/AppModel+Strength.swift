@@ -146,6 +146,7 @@ extension AppModel {
         activeStrength = nil
         showStrengthLogger = false
         refreshStrength()
+        autoBackup(force: true)
     }
 
     func discardActive() {

@@ -13,6 +13,7 @@ struct PulseApp: App {
                     switch phase {
                     case .background:
                         model.scheduleBackgroundRefresh()
+                        model.autoBackup()
                     case .active:
                         model.maybeShowJournalPrompt()
                     default:
