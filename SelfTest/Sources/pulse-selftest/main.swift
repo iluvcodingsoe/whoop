@@ -738,6 +738,40 @@ let historyCheck = reloaded.history(before: sortedKeys.last!, days: 30)
 check(historyCheck.count == 30, "history(before:) liefert 30 Tage")
 try? FileManager.default.removeItem(at: tempDir)
 
+// MARK: Illness Watch
+
+func illnessNights(_ count: Int, sick: Int = 0, oneOff: Bool = false) -> [DayRecord] {
+    (0..<count).map { i in
+        var r = DayRecord(date: DayKey.addDays("2026-09-01", i))
+        let wobble = Double(i % 3) - 1 // -1, 0, 1
+        r.restingHR = 55 + wobble
+        r.hrvRmssd = 70 + wobble * 4
+        r.respiratoryRate = 14.5 + wobble * 0.2
+        r.spo2Avg = 97 + wobble * 0.3
+        r.bodyTemp = 33.8 + wobble * 0.1
+        let fromEnd = count - 1 - i
+        if fromEnd < sick {
+            r.restingHR = 63
+            r.hrvRmssd = 48
+            r.respiratoryRate = 16.3
+            r.bodyTemp = 34.6
+        }
+        if oneOff && fromEnd == 0 { r.restingHR = 61 }
+        return r
+    }
+}
+let calm = IllnessEngine.assess(records: illnessNights(35))
+check(calm?.level == .normal, "Stable nights → no illness signs")
+check((calm?.score ?? 100) < 30, "Stable nights score low")
+let oneOff = IllnessEngine.assess(records: illnessNights(35, oneOff: true))
+check(oneOff?.level == .watch || oneOff?.level == .normal, "One odd resting HR reading is at most a watch")
+let sickA = IllnessEngine.assess(records: illnessNights(35, sick: 2))
+check(sickA?.level == .warning, "Several vitals off for 2 nights → warning")
+check((sickA?.score ?? 0) > 70, "Strong illness pattern scores high")
+check(sickA?.signals.first { $0.kind == .respiratoryRate }?.nightsOff == 2, "Counts nights off in a row")
+check(IllnessEngine.assess(records: illnessNights(4))?.level == .calibrating, "Few nights → calibrating")
+check(IllnessEngine.history(records: illnessNights(40, sick: 2), days: 14).count == 14, "14-night history")
+
 // MARK: Activity breakdown
 
 let actStart = Date(timeIntervalSince1970: 1_780_000_000)

@@ -5,6 +5,7 @@ import SwiftUI
 struct HealthMonitorView: View {
     @Environment(AppModel.self) private var model
     @State private var showInfo = false
+    @State private var showIllness = false
 
     var body: some View {
         NavigationStack {
@@ -41,10 +42,9 @@ struct HealthMonitorView: View {
                             tilesGrid
                                 .padding(.top, 22)
 
-                            if let alert = model.healthAlert {
-                                alertPanel(alert)
-                                    .padding(.top, 16)
-                            }
+                            IllnessCard()
+                                .padding(.top, 16)
+                                .id("illness")
 
                             Text("Not a diagnosis. Readings outside your range can point to illness, stress or overtraining. Talk to your doctor if you\u{2019}re worried.")
                                 .font(.system(size: 14))
@@ -66,6 +66,12 @@ struct HealthMonitorView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: $showIllness) {
+                IllnessWatchView()
+            }
+            .onAppear {
+                if ProcessInfo.processInfo.arguments.contains("-screenshotIllness") { showIllness = true }
+            }
             .sheet(isPresented: $showInfo) {
                 infoSheet
             }
