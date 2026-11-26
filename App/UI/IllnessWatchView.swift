@@ -415,11 +415,16 @@ struct IllnessSignalRow: View {
 
     private var valueText: String {
         guard let value = signal.value else { return "–" }
+        if signal.kind == .bodyTemp {
+            guard let delta = signal.delta else { return "–" }
+            return String(format: "%+.1f °F", delta * 1.8)
+        }
         return "\(signal.kind.formatted(value)) \(signal.kind.displayUnit)"
     }
 
     private var baselineText: String {
         guard let mean = signal.baselineMean else { return "Needs about a week of nights" }
+        if signal.kind == .bodyTemp { return "Change from your normal" }
         var text = "Normal \(signal.kind.formatted(mean))"
         if let delta = signal.delta {
             let sign = delta >= 0 ? "+" : "−"
