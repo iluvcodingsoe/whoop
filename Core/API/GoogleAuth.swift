@@ -39,8 +39,11 @@ public enum HealthScopes {
         "https://www.googleapis.com/auth/googlehealth.profile.readonly",
     ]
 
+    /// Identity scopes so Google also returns an ID token (used for cloud sync sign-in).
+    public static let identity: [String] = ["openid", "email"]
+
     public static var scopeString: String {
-        read.joined(separator: " ")
+        (read + identity).joined(separator: " ")
     }
 }
 
@@ -84,11 +87,14 @@ public struct TokenSet: Codable, Sendable {
     public var accessToken: String
     public var refreshToken: String?
     public var expiry: Date
+    /// Google ID token (present once the openid scope was granted).
+    public var idToken: String?
 
-    public init(accessToken: String, refreshToken: String?, expiry: Date) {
+    public init(accessToken: String, refreshToken: String?, expiry: Date, idToken: String? = nil) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiry = expiry
+        self.idToken = idToken
     }
 
     public var isExpiringSoon: Bool {
@@ -193,7 +199,8 @@ public final class GoogleAuth: @unchecked Sendable {
         let tokens = TokenSet(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
-            expiry: Date().addingTimeInterval(response.expiresIn ?? 3600)
+            expiry: Date().addingTimeInterval(response.expiresIn ?? 3600),
+            idToken: response.idToken
         )
         store(tokens)
         return tokens
@@ -206,6 +213,16 @@ public final class GoogleAuth: @unchecked Sendable {
             return try await refresh(config: config).accessToken
         }
         return current.accessToken
+    }
+
+    /// A fresh Google ID token, refreshing the session if it is older than ~50 min.
+    public func freshIDToken(config: GoogleOAuthConfig) async throws -> String? {
+        guard let current = tokens else { throw AuthError.notConnected }
+        if current.idToken == nil { return nil }
+        if current.isExpiringSoon || current.expiry.timeIntervalSinceNow < 600 {
+            return try await refresh(config: config).idToken
+        }
+        return current.idToken
     }
 
     @discardableResult
@@ -221,7 +238,8 @@ public final class GoogleAuth: @unchecked Sendable {
         let updated = TokenSet(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken ?? refreshToken,
-            expiry: Date().addingTimeInterval(response.expiresIn ?? 3600)
+            expiry: Date().addingTimeInterval(response.expiresIn ?? 3600),
+            idToken: response.idToken ?? current.idToken
         )
         store(updated)
         return updated
@@ -263,11 +281,13 @@ public final class GoogleAuth: @unchecked Sendable {
         let accessToken: String
         let refreshToken: String?
         let expiresIn: Double?
+        let idToken: String?
 
         enum CodingKeys: String, CodingKey {
             case accessToken = "access_token"
             case refreshToken = "refresh_token"
             case expiresIn = "expires_in"
+            case idToken = "id_token"
         }
     }
 

@@ -147,6 +147,7 @@ extension AppModel {
         showStrengthLogger = false
         refreshStrength()
         autoBackup(force: true)
+        cloudAutoUpload()
     }
 
     func discardActive() {
