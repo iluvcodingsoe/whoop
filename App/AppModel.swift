@@ -207,6 +207,7 @@ final class AppModel {
     /// Logged activity to remove once its exercises are saved.
     var pendingReplaceActivity: (UUID, String)?
     let auth = GoogleAuth()
+    let cloud = FirebaseCloud()
     private(set) var strainResults: [String: StrainResult] = [:]
     private(set) var sleepAnalyses: [String: SleepAnalysis] = [:]
     private(set) var recoveryResults: [String: RecoveryResult] = [:]

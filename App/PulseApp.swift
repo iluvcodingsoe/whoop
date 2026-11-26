@@ -14,6 +14,7 @@ struct PulseApp: App {
                     case .background:
                         model.scheduleBackgroundRefresh()
                         model.autoBackup()
+                        model.cloudAutoUpload()
                     case .active:
                         model.maybeShowJournalPrompt()
                     default:

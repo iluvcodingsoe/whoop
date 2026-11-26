@@ -17,6 +17,7 @@ struct SettingsView: View {
                 goalsSection(model: $model)
                 calculationSection(model: $model)
                 demoSection
+                CloudSection()
                 BackupSection()
                 dataSection
                 aboutSection

@@ -738,6 +738,14 @@ let historyCheck = reloaded.history(before: sortedKeys.last!, days: 30)
 check(historyCheck.count == 30, "history(before:) liefert 30 Tage")
 try? FileManager.default.removeItem(at: tempDir)
 
+// MARK: Cloud sign-in scopes
+
+check(HealthScopes.scopeString.contains("openid") && HealthScopes.scopeString.contains("email"), "Google sign-in asks for an ID token")
+let legacyTokens = #"{"accessToken":"a","refreshToken":"r","expiry":"2026-11-26T10:00:00Z"}"#.data(using: .utf8)!
+let tokenDecoder = JSONDecoder()
+tokenDecoder.dateDecodingStrategy = .iso8601
+check((try? tokenDecoder.decode(TokenSet.self, from: legacyTokens))?.idToken == nil, "Saved tokens without an ID token still load")
+
 // MARK: Illness Watch
 
 func illnessNights(_ count: Int, sick: Int = 0, oneOff: Bool = false) -> [DayRecord] {
