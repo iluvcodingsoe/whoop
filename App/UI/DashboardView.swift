@@ -514,8 +514,8 @@ struct CoachCard: View {
             result.append(CoachTip(id: "bed", title: model.loc("Schlafenszeit", "Bedtime"),
                 message: model.loc("Geh heute bis \(Fmt.clockFromMinutes(bed)) ins Bett, um deinen Schlafbedarf zu decken.", "Be in bed by \(Fmt.clockFromMinutes(bed)) tonight to cover your sleep need.")))
         }
-        if let alert = model.healthAlert {
-            result.append(CoachTip(id: "health", title: model.loc("Gesundheits-Hinweis", "Health notice"), message: alert.message))
+        if let illness = model.illness(for: key), illness.level >= .watch {
+            result.insert(CoachTip(id: "illness", title: "Illness Watch: \(illness.level.title)", message: illness.detail), at: 0)
         }
         if let sleep = model.sleep(for: key), sleep.hasData, sleep.debtAfterMinutes > 30 {
             result.append(CoachTip(id: "debt", title: model.loc("Schlafschuld", "Sleep debt"),

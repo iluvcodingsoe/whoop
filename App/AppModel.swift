@@ -1048,7 +1048,8 @@ final class AppModel {
             let sleepText = sleep(for: today).flatMap { $0.hasData ? "\(Fmt.hm($0.sleptMinutes)) h" : nil }
             let yesterday = DayKey.addDays(today, -1)
             let journalPending = journal.entry(for: yesterday).isEmpty && store.days[yesterday] != nil
-            let alertMessage = HealthMonitor.alert(records: store.chronological(upTo: today, count: 10), language: language)?.message
+            let illness = IllnessEngine.assess(records: store.chronological(upTo: today, count: 40))
+            let alertMessage = illness.flatMap { $0.level >= .watch ? "Illness Watch: \($0.headline). \($0.detail)" : nil }
             PulseNotifications.postRecoverySummary(
                 recovery: rec.score,
                 sleep: sleepText,
