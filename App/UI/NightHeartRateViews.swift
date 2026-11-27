@@ -90,12 +90,13 @@ struct BeforeBedHeartRateCard: View {
                             Chart(history, id: \.key) { item in
                                 BarMark(
                                     x: .value("Night", DayKey.date(from: item.key) ?? Date(), unit: .day),
-                                    y: .value("BPM", item.value)
+                                    yStart: .value("Base", (history.map(\.value).min() ?? 50) - 8),
+                                    yEnd: .value("BPM", item.value)
                                 )
                                 .foregroundStyle(item.key == key ? Theme.sleepPurple : Theme.sleepPurple.opacity(0.4))
                                 .cornerRadius(3)
                             }
-                            .chartYScale(domain: .automatic(includesZero: false))
+                            .chartYScale(domain: ((history.map(\.value).min() ?? 50) - 8)...((history.map(\.value).max() ?? 90) + 4))
                             .chartXAxis {
                                 AxisMarks(values: .stride(by: .day, count: 3)) { _ in
                                     AxisValueLabel(format: .dateTime.month(.abbreviated).day())
