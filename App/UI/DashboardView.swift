@@ -90,6 +90,10 @@ struct HomeView: View {
                     .id("myday")
                     .padding(.top, 34)
 
+                BeforeBedHeartRateCard()
+                    .id("beforebed")
+                    .padding(.top, 34)
+
                 footer
                     .padding(.top, 18)
                 ScreenshotScrollAnchor(proxy: proxy)
