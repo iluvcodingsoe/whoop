@@ -30,6 +30,9 @@ struct SleepDetailView: View {
                         sleepHRChart(session)
                             .padding(.top, 20)
 
+                        SleepHeartRateStats(key: model.selectedDayKey)
+                            .padding(.top, 14)
+
                         stageCards(sleep, session: session)
                             .id("stages")
                             .padding(.top, 18)

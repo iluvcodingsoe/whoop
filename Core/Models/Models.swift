@@ -224,7 +224,7 @@ public struct DayRecord: Codable, Sendable {
 
     /// Hauptschlaf = als solcher markierte Session, sonst die längste.
     public var mainSleep: SleepSession? {
-        if let flagged = sleepSessions.first(where: { $0.isMainSleep }) {
+        if let flagged = sleepSessions.filter(\.isMainSleep).max(by: { $0.minutesAsleep < $1.minutesAsleep }) {
             return flagged
         }
         return sleepSessions.max(by: { $0.minutesAsleep < $1.minutesAsleep })

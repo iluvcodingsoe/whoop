@@ -746,6 +746,31 @@ let tokenDecoder = JSONDecoder()
 tokenDecoder.dateDecodingStrategy = .iso8601
 check((try? tokenDecoder.decode(TokenSet.self, from: legacyTokens))?.idToken == nil, "Saved tokens without an ID token still load")
 
+// MARK: Night heart rate
+
+let nightStart = Date(timeIntervalSince1970: 1_780_000_000)
+let nightSession = SleepSession(id: "n", start: nightStart, end: nightStart.addingTimeInterval(8 * 3600), minutesAsleep: 460, minutesAwake: 20,
+                                stages: [StageSpan(stage: .awake, start: nightStart.addingTimeInterval(3 * 3600), end: nightStart.addingTimeInterval(3 * 3600 + 600))])
+var nightSamples: [HRSample] = []
+for m in -90..<(8 * 60) {
+    let t = nightStart.addingTimeInterval(Double(m) * 60)
+    var bpm: Double = m < -30 ? 80 : (m < 0 ? 70 : 55)
+    if m >= 180 && m < 190 { bpm = 90 } // awake spike, should be ignored
+    if m >= 300 && m < 310 { bpm = 48 }
+    nightSamples.append(HRSample(t: t, bpm: bpm))
+}
+let night = NightHeartRate.analyze(samples: nightSamples, session: nightSession)
+check(abs((night.beforeBed ?? 0) - 70) < 0.01, "Before-bed HR is the 30 min before sleep")
+check(abs((night.earlierEvening ?? 0) - 80) < 0.01, "Earlier evening HR")
+check(abs((night.sleepingLowest ?? 0) - 48) < 0.01, "Lowest 5-min sleeping HR")
+check((night.sleepingAverage ?? 99) < 56, "Awake minutes are left out of the sleeping average")
+var twoMain = DayRecord(date: "2026-11-20")
+twoMain.sleepSessions = [
+    SleepSession(id: "short", start: nightStart, end: nightStart.addingTimeInterval(3600), minutesAsleep: 50, minutesAwake: 10),
+    SleepSession(id: "long", start: nightStart, end: nightStart.addingTimeInterval(8 * 3600), minutesAsleep: 450, minutesAwake: 30),
+]
+check(twoMain.mainSleep?.id == "long", "Main sleep picks the longest flagged session")
+
 // MARK: Illness Watch
 
 func illnessNights(_ count: Int, sick: Int = 0, oneOff: Bool = false) -> [DayRecord] {
